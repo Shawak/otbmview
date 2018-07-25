@@ -108,9 +108,9 @@ impl TileAreaNode {
     fn parse(data: &mut File) -> Result<TileAreaNode, Error> {
         println!("parsing TileAreaNode");
         Ok(TileAreaNode {
-            x: 0,
-            y: 0,
-            z: 0,
+            x: data.get()?,
+            y: data.get()?,
+            z: data.get()?,
         })
     }
 }
