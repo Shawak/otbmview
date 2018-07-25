@@ -1,0 +1,8 @@
+[package]
+name = "otbmview"
+version = "0.1.0"
+authors = ["Shawak <maxi.nussbaum@googlemail.com>"]
+
+[dependencies]
+enum-primitive-derive = "^0.1"
+num-traits = "^0.1"
