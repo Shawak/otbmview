@@ -1,4 +1,4 @@
-#![feature(test)]
+/*#![feature(test)]
 
 pub mod mem_read;
 pub mod mem_type;
@@ -47,4 +47,4 @@ mod tests {
         });
     }
 
-}
+}*/

@@ -57,7 +57,7 @@ impl std::fmt::Display for Node {
             Node::HouseTile(x) => write!(f, "HouseTile"),
             Node::Waypoints(x) => write!(f, "Waypoints"),
             Node::Waypoint(x) => write!(f, "Waypoint"),
-            _ => write!(f, "Any"),
+            _ => write!(f, "Unknown"),
         }
     }
 }
