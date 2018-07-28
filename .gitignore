@@ -1,4 +1,3 @@
-
 # Created by https://www.gitignore.io/api/rust,intellij
 
 ### Intellij ###
@@ -88,3 +87,8 @@ Cargo.lock
 
 
 # End of https://www.gitignore.io/api/rust,intellij
+
+
+*.otbm
+*.spr
+*.dat

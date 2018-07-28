@@ -6,3 +6,4 @@ authors = ["Shawak <maxi.nussbaum@googlemail.com>"]
 [dependencies]
 enum-primitive-derive = "^0.1"
 num-traits = "^0.1"
+rayon = "1.0"
