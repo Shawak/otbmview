@@ -6,17 +6,31 @@ extern crate image;
 
 mod otbm;
 mod spr;
+mod dat;
 mod mem_read;
 mod mem_type;
 
-fn main() {
+use std::fs::File;
+use std::io::{Error, Cursor, Read, Write, Seek, SeekFrom};
+
+use mem_read::*;
+use mem_type::*;
+
+fn run() -> Result<(), Error> {
+
     //otbm::read_otbm("map2.otbm".to_string()).unwrap();
 
-    let r = spr::parse("Tibia.spr".to_string());
-    match r {
-        Ok(r) => println!("{}", r.version),
+    //let r = spr::parse("Tibia.spr".to_string())?;
+    //println!("{}", r.version);
+
+    dat::parse("Tibia.dat".to_string())?;
+
+    Ok(())
+}
+
+fn main() {
+    match run() {
+        Ok(r) => println!("done"),
         Err(e) => panic!("{}", e)
     }
-
-    println!("done");
 }

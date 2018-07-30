@@ -1,3 +1,5 @@
+// https://otland.net/threads/a-comphrensive-description-of-the-otbm-format.258583/
+
 #![allow(dead_code)]
 
 use std::fs::File;
@@ -31,7 +33,6 @@ enum Header {
 
 pub enum Node {
     Unknown,
-
     MapHeader(MapHeaderNode),
     MapData(MapDataNode),
     TileArea(TileAreaNode),
@@ -225,8 +226,8 @@ pub fn read_otbm(filename: String) -> Result<Option<Node>, Error> {
         panic!("unknown OTBM format: unexpected magic bytes.");
     }
 
-    let mut header: Option<Node> = read_node(&mut data, false)?;
-    Ok(header)
+    let root_node: Option<Node> = read_node(&mut data, false)?;
+    Ok(root_node)
 }
 
 fn read_node(data: &mut Cursor<Vec<u8>>, is_child: bool) -> Result<Option<Node>, Error> {
