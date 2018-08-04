@@ -9,9 +9,15 @@ use std::collections::hash_map::DefaultHasher;
 use mem_read::*;
 use mem_type::*;
 
+use rand::*;
+
 use num_traits::{FromPrimitive, ToPrimitive};
 
 #[derive(Primitive)]
+#[derive(Hash)]
+#[derive(Eq)]
+#[derive(PartialEq)]
+#[derive(Debug)]
 enum DatAttributesHeader {
     Ground = 0,
     GroundBorder = 1,
@@ -61,34 +67,19 @@ enum DatAttributesHeader {
     LastAttr = 255
 }
 
-impl std::cmp::Eq for DatAttributesHeader {
-
-}
-
-impl std::cmp::PartialEq for DatAttributesHeader {
-    fn eq(&self, other: &DatAttributesHeader) -> bool {
-        self == other
-    }
-}
-
-impl std::hash::Hash for DatAttributesHeader {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) -> u64 {
-        let mut s = DefaultHasher::new();
-        t.hash(&mut s);
-        s.finish()
-    }
-}
-
+#[derive(Debug)]
 struct LightInfo {
     intensity: u16,
     color: u16
 }
 
+#[derive(Debug)]
 struct Vector2 {
     x: u16,
     y: u16
 }
 
+#[derive(Debug)]
 struct MarketInfo {
     category: u16,
     trade_as: u16,
@@ -98,6 +89,7 @@ struct MarketInfo {
     required_level: u16
 }
 
+#[derive(Debug)]
 enum DatAttributes {
     Ground(u16),
     GroundBorder,
@@ -148,51 +140,51 @@ enum DatAttributes {
 }
 
 impl DatAttributes {
-    fn new(header: &DatAttributesHeader, category: ThingCategory, data: &mut Cursor<Vec<u8>>) -> Result<DatAttributes, Error> {
+    fn new(header: &DatAttributesHeader, category: &ThingCategory, data: &mut Cursor<Vec<u8>>) -> Result<DatAttributes, Error> {
         let r = match header {
-            Ground => DatAttributes::Ground(data.get()?),
-            Writeable =>  DatAttributes::Writeable(data.get()?),
-            WriteableOnce =>  DatAttributes::WriteableOnce(data.get()?),
-            MinimapColor =>  DatAttributes::MinimapColor(data.get()?),
-            LensHelp =>  DatAttributes::LensHelp(data.get()?),
-            Cloth =>  DatAttributes::Cloth(data.get()?),
-            DefaultAction =>  DatAttributes::DefaultAction(data.get()?),
+            &DatAttributesHeader::Ground => DatAttributes::Ground(data.get()?),
+            &DatAttributesHeader::Writeable => DatAttributes::Writeable(data.get()?),
+            &DatAttributesHeader::WriteableOnce => DatAttributes::WriteableOnce(data.get()?),
+            &DatAttributesHeader::MinimapColor => DatAttributes::MinimapColor(data.get()?),
+            &DatAttributesHeader::LensHelp => DatAttributes::LensHelp(data.get()?),
+            &DatAttributesHeader::Cloth => DatAttributes::Cloth(data.get()?),
+            &DatAttributesHeader::DefaultAction => DatAttributes::DefaultAction(data.get()?),
 
-            GroundBorder => DatAttributes::GroundBorder,
-            OnBottom => DatAttributes::OnBottom,
-            OnTop => DatAttributes::OnTop,
-            Container => DatAttributes::Container,
-            Stackable => DatAttributes::Stackable,
-            ForceUse => DatAttributes::ForceUse,
-            MultiUse => DatAttributes::MultiUse,
-            FluidContainer => DatAttributes::FluidContainer,
-            Splash => DatAttributes::Splash,
-            NotWalkable => DatAttributes::NotWalkable,
-            NotMoveable => DatAttributes::NotMoveable,
-            BlockProjectile => DatAttributes::BlockProjectile,
-            NotPathable => DatAttributes::NotPathable,
-            NoMoveAnimation => DatAttributes::NoMoveAnimation,
-            Pickupable => DatAttributes::Pickupable,
-            Hangable => DatAttributes::Hangable,
-            HookSouth => DatAttributes::HookSouth,
-            HookEast => DatAttributes::HookEast,
-            Rotateable => DatAttributes::Rotateable,
-            DontHide => DatAttributes::DontHide,
-            Translucent => DatAttributes::Translucent,
-            LyingCorpse => DatAttributes::LyingCorpse,
-            AnimateAlways => DatAttributes::AnimateAlways,
-            FullGround => DatAttributes::FullGround,
-            Look => DatAttributes::Look,
-            Wrapable => DatAttributes::Wrapable,
-            Unwrapable => DatAttributes::Unwrapable,
-            TopEffect => DatAttributes::TopEffect,
-            Usable => DatAttributes::Usable,
+            &DatAttributesHeader::GroundBorder => DatAttributes::GroundBorder,
+            &DatAttributesHeader::OnBottom => DatAttributes::OnBottom,
+            &DatAttributesHeader::OnTop => DatAttributes::OnTop,
+            &DatAttributesHeader::Container => DatAttributes::Container,
+            &DatAttributesHeader::Stackable => DatAttributes::Stackable,
+            &DatAttributesHeader::ForceUse => DatAttributes::ForceUse,
+            &DatAttributesHeader::MultiUse => DatAttributes::MultiUse,
+            &DatAttributesHeader::FluidContainer => DatAttributes::FluidContainer,
+            &DatAttributesHeader::Splash => DatAttributes::Splash,
+            &DatAttributesHeader::NotWalkable => DatAttributes::NotWalkable,
+            &DatAttributesHeader::NotMoveable => DatAttributes::NotMoveable,
+            &DatAttributesHeader::BlockProjectile => DatAttributes::BlockProjectile,
+            &DatAttributesHeader::NotPathable => DatAttributes::NotPathable,
+            &DatAttributesHeader::NoMoveAnimation => DatAttributes::NoMoveAnimation,
+            &DatAttributesHeader::Pickupable => DatAttributes::Pickupable,
+            &DatAttributesHeader::Hangable => DatAttributes::Hangable,
+            &DatAttributesHeader::HookSouth => DatAttributes::HookSouth,
+            &DatAttributesHeader::HookEast => DatAttributes::HookEast,
+            &DatAttributesHeader::Rotateable => DatAttributes::Rotateable,
+            &DatAttributesHeader::DontHide => DatAttributes::DontHide,
+            &DatAttributesHeader::Translucent => DatAttributes::Translucent,
+            &DatAttributesHeader::LyingCorpse => DatAttributes::LyingCorpse,
+            &DatAttributesHeader::AnimateAlways => DatAttributes::AnimateAlways,
+            &DatAttributesHeader::FullGround => DatAttributes::FullGround,
+            &DatAttributesHeader::Look => DatAttributes::Look,
+            &DatAttributesHeader::Wrapable => DatAttributes::Wrapable,
+            &DatAttributesHeader::Unwrapable => DatAttributes::Unwrapable,
+            &DatAttributesHeader::TopEffect => DatAttributes::TopEffect,
+            &DatAttributesHeader::Usable => DatAttributes::Usable,
 
-            Light => DatAttributes::Light(LightInfo { intensity: data.get()?, color: data.get()? }),
-            Displacement => DatAttributes::Displacement(Vector2 { x: data.get()?, y: data.get()? }),
+            &DatAttributesHeader::Light => DatAttributes::Light(LightInfo { intensity: data.get()?, color: data.get()? }),
+            &DatAttributesHeader::Displacement => DatAttributes::Displacement(Vector2 { x: data.get()?, y: data.get()? }),
 
-            Elevation => DatAttributes::Elevation(data.get()?),
-            Market => DatAttributes::Market(MarketInfo {
+            &DatAttributesHeader::Elevation => DatAttributes::Elevation(data.get()?),
+            &DatAttributesHeader::Market => DatAttributes::Market(MarketInfo {
                 category: data.get()?,
                 trade_as: data.get()?,
                 show_as: data.get()?,
@@ -203,18 +195,136 @@ impl DatAttributes {
 
             _ => panic!("unknown item attribute")
         };
-
-        let group_count = if category == ThingCategory::Creature { data.get::<u8>()? } else { 1 };
-        for i in 0..group_count {
-
-        }
-
-
         Ok(r)
     }
 }
 
+#[derive(Debug)]
+struct FrameGroupDuration {
+    minimum: u32,
+    maximum: u32
+}
+
+impl FrameGroupDuration {
+    fn new(data: &mut Cursor<Vec<u8>>) -> Result<FrameGroupDuration, Error> {
+        Ok(FrameGroupDuration {
+            minimum: data.get()?,
+            maximum: data.get()?
+        })
+    }
+
+    fn duration(&self) -> u32 {
+        if self.minimum == self.maximum {
+            self.minimum
+        } else {
+            thread_rng().gen_range(self.minimum, self.maximum)
+        }
+    }
+}
+
+#[derive(Debug)]
+struct FrameGroupAnimator {
+    animation_phases: u8,
+    async: bool,
+    loop_count: i32,
+    start_phase: i8,
+    current_phase: i32,
+    current_duration: i32,
+    last_phase_ticks: u64,
+    animation_direction: u8,
+    is_complete: bool,
+    current_loop: u8,
+    frame_group_durations: Vec<FrameGroupDuration>
+}
+
+impl FrameGroupAnimator {
+    fn new(animation_phases: u8, data: &mut Cursor<Vec<u8>>) -> Result<FrameGroupAnimator, Error> {
+        let mut animator = FrameGroupAnimator {
+            animation_phases,
+            async: data.get::<u8>()? == 0,
+            loop_count: data.get()?,
+            start_phase: data.get()?,
+            current_phase: 0,
+            current_duration: 0,
+            last_phase_ticks: 0,
+            animation_direction: 0,
+            is_complete: false,
+            current_loop: 0,
+            frame_group_durations: Vec::new()
+        };
+
+        for _ in 0..animation_phases {
+            let duration = FrameGroupDuration::new(data)?;
+            animator.frame_group_durations.push(duration);
+        }
+
+        Ok(animator)
+    }
+}
+
 #[derive(Primitive)]
+#[derive(Eq)]
+#[derive(PartialEq)]
+#[derive(Hash)]
+enum FrameGroupType {
+    Idle = 0,
+    Moving = 1
+}
+
+#[derive(Debug)]
+struct FrameGroup {
+    width: u8,
+    height: u8,
+    exact_size: u8,
+    layers: u8,
+    pattern_width: u8,
+    pattern_height: u8,
+    pattern_depth: u8,
+    phases: u8,
+    animator: Option<FrameGroupAnimator>,
+    sprites: Vec<u32>
+}
+
+impl FrameGroup {
+    fn new(data: &mut Cursor<Vec<u8>>) -> Result<FrameGroup, Error> {
+        let width = data.get::<u8>()?;
+        let height = data.get::<u8>()?;
+
+        let mut frame_group = FrameGroup {
+            width,
+            height,
+            exact_size: if width > 1 || height > 1 { data.get()? } else { 32u8 },
+            layers: data.get()?,
+            pattern_width: data.get()?,
+            pattern_height: data.get()?,
+            pattern_depth: data.get()?,
+            phases: data.get()?,
+            animator: Option::None,
+            sprites: Vec::new()
+        };
+
+        if frame_group.phases > 1 {
+            frame_group.animator = Option::from(FrameGroupAnimator::new(frame_group.phases, data)?);
+        }
+
+        let total_sprites: u32 = frame_group.width as u32 * frame_group.height as u32 * frame_group.layers as u32 *
+            frame_group.pattern_width as u32 * frame_group.pattern_height as u32 * frame_group.pattern_depth as u32 * frame_group.phases as u32;
+
+        for _ in 0..total_sprites {
+            frame_group.sprites.push(data.get()?);
+        }
+
+        //println!("{:?}", frame_group);
+
+        Ok(frame_group)
+    }
+}
+
+#[derive(Primitive)]
+#[derive(Eq)]
+#[derive(PartialEq)]
+#[derive(Hash)]
+#[derive(Debug)]
 enum ThingCategory {
     Item = 0,
     Creature = 1,
@@ -224,50 +334,74 @@ enum ThingCategory {
 
 struct Thing {
     id: u16,
-    attributes: HashMap<DatAttributesHeader, DatAttributes>
+    attributes: HashMap<DatAttributesHeader, DatAttributes>,
+    frame_groups: HashMap<FrameGroupType, FrameGroup>
 }
 
 impl Thing {
     fn new(id: u16) -> Thing {
-        Thing { id, attributes: HashMap::new() }
+        Thing { id, attributes: HashMap::new(), frame_groups: HashMap::new() }
     }
 }
 
 const THING_CATEGORIES: &'static[ThingCategory] = &[ThingCategory::Item, ThingCategory::Creature, ThingCategory::Effect, ThingCategory::Missile];
 
 pub fn parse_items(data: &mut Cursor<Vec<u8>>) -> Result<(), Error> {
-    let mut things: HashMap<ThingCategory, HashMap<u16, Thing>> = HashMap::new();
+    let mut counts: HashMap<&ThingCategory, u16> = HashMap::new();
     for category in THING_CATEGORIES {
-        let first_id = if category == ThingCategory::Item { 100 } else { 1 };
-        let thing_count = data.get::<u16>()?;
+        let count = data.get::<u16>()? + 1;
+        //println!("count: {}", count);
+        counts.insert(category, count);
+    }
 
+    let mut things: HashMap<&ThingCategory, HashMap<u16, Thing>> = HashMap::new();
+    for category in THING_CATEGORIES {
+        things.insert(category, HashMap::new());
+
+        let first_id = if category == &ThingCategory::Item { 100 } else { 1 };
+
+        let thing_count = counts[category];
         for id in first_id..thing_count {
+            //println!("id: {} {:?}", id, category);
             let mut thing = Thing::new(id);
 
             let n = DatAttributesHeader::LastAttr.to_u8().expect("Error");
-            for k in 0..n {
+            for _ in 0..n {
+                //println!("pos: {}", data.position());
                 let header = DatAttributesHeader::from_u8(data.get::<u8>()?).expect("unknown dat attribute");
+                //println!("header: {:?}", header);
                 if header == DatAttributesHeader::LastAttr {
                     break;
                 }
 
-                let mut attr = DatAttributes::new(&header, *category, data)?;
+                let mut attr = DatAttributes::new(&header, category, data)?;
+                //println!(" > {:?} -> {:?}", header, attr);
                 thing.attributes.insert(header, attr);
             }
+
+            let group_count = if category == &ThingCategory::Creature { data.get::<u8>()? } else { 1 };
+            //println!("group_count: {}", group_count);
+            for i in 0..group_count {
+                let group_type = if category == &ThingCategory::Creature { FrameGroupType::from_u8(data.get::<u8>()?).expect("unknown frame group") } else { FrameGroupType::Idle };
+                thing.frame_groups.insert(group_type, FrameGroup::new(data)?);
+            }
+
+            //things[category][&id] = thing;
+            things.get_mut(category).expect("").insert(id, thing);
         }
     }
 
     Ok(())
 }
 
-pub fn parse(filename: String) -> Result<(), Error> {
+pub fn parse(filename: String) -> Result</*HashMap<&ThingCategory, HashMap<u16, Thing>>*/(), Error> {
     let mut file = File::open(filename)?;
     let mut data: Vec<u8> = Vec::new();
     file.read_to_end(&mut data)?;
     let mut data = Cursor::new(data);
 
     let signature = data.get::<u32>();
-    parse_items(&mut data)?;
+    let things = parse_items(&mut data)?;
 
     Ok(())
 }

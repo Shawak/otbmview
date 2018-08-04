@@ -3,6 +3,7 @@ extern crate enum_primitive_derive;
 extern crate num_traits;
 extern crate rayon;
 extern crate image;
+extern crate rand;
 
 mod otbm;
 mod spr;
