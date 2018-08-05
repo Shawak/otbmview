@@ -4,14 +4,13 @@
 
 use std::fs::File;
 //use std::io::prelude::*;
-use std::io::{Error, Cursor, Read, Write};
+use std::io::{Error, ErrorKind, Read};
 
 use std;
 
 use num_traits::{FromPrimitive, ToPrimitive};
 
 use mem_read::*;
-use mem_type::*;
 
 const NODE_ESC: u8 = 0xFD;
 const NODE_INIT: u8 = 0xFE;
@@ -31,6 +30,7 @@ enum Header {
     Waypoint = 0x10,
 }
 
+#[derive(PartialEq)]
 pub enum Node {
     Unknown,
     MapHeader(MapHeaderNode),
@@ -48,7 +48,11 @@ pub enum Node {
 impl std::fmt::Display for Node {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            Node::MapHeader(x) => write!(f, "MapHeader - Width: {} Height: {}", x.map_width, x.map_height),
+            Node::MapHeader(x) => write!(
+                f,
+                "MapHeader - Width: {} Height: {}",
+                x.map_width, x.map_height
+            ),
             Node::MapData(x) => write!(f, "MapData"),
             Node::TileArea(x) => write!(f, "TileArea x: {} y: {} z: {}", x.x, x.y, x.z),
             Node::Tile(x) => write!(f, "Tile x: {} y: {}", x.x, x.y),
@@ -63,6 +67,7 @@ impl std::fmt::Display for Node {
     }
 }
 
+#[derive(PartialEq)]
 pub struct MapHeaderNode {
     version: u32,
     map_width: u16,
@@ -72,7 +77,7 @@ pub struct MapHeaderNode {
 }
 
 impl MapHeaderNode {
-    fn parse(data: &mut Cursor<Vec<u8>>) -> Result<MapHeaderNode, Error> {
+    fn parse<T: MemRead>(data: &mut T) -> Result<MapHeaderNode, Error> {
         Ok(MapHeaderNode {
             version: data.get()?,
             map_width: data.get()?,
@@ -83,24 +88,25 @@ impl MapHeaderNode {
     }
 }
 
+#[derive(PartialEq)]
 pub struct MapDataNode {}
 
 impl MapDataNode {
-    fn parse(data: &mut Cursor<Vec<u8>>) -> Result<MapDataNode, Error> {
+    fn parse<T: MemRead>(data: &mut T) -> Result<MapDataNode, Error> {
         Ok(MapDataNode {})
     }
 }
 
+#[derive(PartialEq)]
 pub struct TileAreaNode {
     x: u16,
     y: u16,
     z: u8,
-
     //tiles: Vec<TileNode>
 }
 
 impl TileAreaNode {
-    fn parse(data: &mut Cursor<Vec<u8>>) -> Result<TileAreaNode, Error> {
+    fn parse<T: MemRead>(data: &mut T) -> Result<TileAreaNode, Error> {
         Ok(TileAreaNode {
             x: data.get()?,
             y: data.get()?,
@@ -109,46 +115,44 @@ impl TileAreaNode {
     }
 }
 
+#[derive(PartialEq)]
 pub struct TileNode {
     x: u8,
     y: u8,
-
     //items: Vec<ItemNode>
 }
 
 impl TileNode {
-    fn parse(data: &mut Cursor<Vec<u8>>) -> Result<TileNode, Error> {
+    fn parse<T: MemRead>(data: &mut T) -> Result<TileNode, Error> {
         Ok(TileNode {
             x: data.get()?,
-            y: data.get()?
+            y: data.get()?,
         })
     }
 }
 
+#[derive(PartialEq)]
 pub struct ItemNode {
     id: u16,
-
     // content: Vec<???>
 }
 
 impl ItemNode {
-    fn parse(data: &mut Cursor<Vec<u8>>) -> Result<ItemNode, Error> {
-        Ok(ItemNode {
-            id: data.get()?,
-        })
+    fn parse<T: MemRead>(data: &mut T) -> Result<ItemNode, Error> {
+        Ok(ItemNode { id: data.get()? })
     }
 }
 
+#[derive(PartialEq)]
 pub struct HouseTileNode {
     x: u16,
     y: u16,
     house_id: u32,
-
     //items: Vec<ItemNode>
 }
 
 impl HouseTileNode {
-    fn parse(data: &mut Cursor<Vec<u8>>) -> Result<HouseTileNode, Error> {
+    fn parse<T: MemRead>(data: &mut T) -> Result<HouseTileNode, Error> {
         Ok(HouseTileNode {
             x: data.get()?,
             y: data.get()?,
@@ -157,16 +161,18 @@ impl HouseTileNode {
     }
 }
 
+#[derive(PartialEq)]
 pub struct WaypointsNode {
     // nodes: Vec<WaypontNode>
 }
 
 impl WaypointsNode {
-    fn parse(data: &mut Cursor<Vec<u8>>) -> Result<WaypointsNode, Error> {
+    fn parse<T: MemRead>(data: &mut T) -> Result<WaypointsNode, Error> {
         Ok(WaypointsNode {})
     }
 }
 
+#[derive(PartialEq)]
 pub struct WaypointNode {
     name: String,
     x: u16,
@@ -175,7 +181,7 @@ pub struct WaypointNode {
 }
 
 impl WaypointNode {
-    fn parse(data: &mut Cursor<Vec<u8>>) -> Result<WaypointNode, Error> {
+    fn parse<T: MemRead>(data: &mut T) -> Result<WaypointNode, Error> {
         Ok(WaypointNode {
             name: String::new(),
             x: 0,
@@ -185,16 +191,18 @@ impl WaypointNode {
     }
 }
 
+#[derive(PartialEq)]
 pub struct TownsNode {
     //towns: Vec<TownNode>
 }
 
 impl TownsNode {
-    fn parse(data: &mut Cursor<Vec<u8>>) -> Result<TownsNode, Error> {
+    fn parse<T: MemRead>(data: &mut T) -> Result<TownsNode, Error> {
         Ok(TownsNode {})
     }
 }
 
+#[derive(PartialEq)]
 pub struct TownNode {
     town_id: u32,
     name: String,
@@ -204,7 +212,7 @@ pub struct TownNode {
 }
 
 impl TownNode {
-    fn parse(data: &mut Cursor<Vec<u8>>) -> Result<TownNode, Error> {
+    fn parse<T: MemRead>(data: &mut T) -> Result<TownNode, Error> {
         Ok(TownNode {
             town_id: data.get()?,
             name: String::new(),
@@ -215,81 +223,66 @@ impl TownNode {
     }
 }
 
-pub fn read_otbm(filename: String) -> Result<Option<Node>, Error> {
+pub fn read_otbm(filename: String) -> Result<Node, Error> {
     let mut file = File::open(filename)?;
     let mut data: Vec<u8> = Vec::new();
     file.read_to_end(&mut data)?;
-    let mut data = Cursor::new(data);
+    let data: &mut &[u8] = &mut data.as_ref();
 
-    let map_identifier: u32 = data.get()?;
-    if map_identifier != 0x0 && map_identifier != 0x4D42544F {
+    let map_identifier = data.get::<u32>()?;
+    if map_identifier != 0x0 && map_identifier != 0x4D42_544F {
         panic!("unknown OTBM format: unexpected magic bytes.");
     }
 
-    let root_node: Option<Node> = read_node(&mut data, false)?;
-    Ok(root_node)
+    read_node(data, false)
 }
 
-fn read_node(data: &mut Cursor<Vec<u8>>, is_child: bool) -> Result<Option<Node>, Error> {
-    let mut node: Option<Node> = None;
-    let mut children: Vec<Node> = Vec::new();
+fn read_node<T: MemRead>(data: &mut T, is_child: bool) -> Result<Node, Error> {
+    let mut node = Node::Unknown;
+    let mut children = vec![];
 
     let mut skip = false;
     let mut first = true;
 
-    while let Ok(c_byte) = if is_child && first { first = false; Ok(0xFE) } else { data.get::<u8>() } {
+    loop {
         if skip {
             skip = false;
             continue;
         }
 
-        if node.is_none() {
-            if c_byte == NODE_INIT || c_byte == NODE_TERM {
+        let c_byte = if is_child && first {
+            first = false;
+            0xFE
+        } else {
+            data.get::<u8>()?
+        };
+
+        match c_byte {
+            NODE_INIT | NODE_TERM if node == Node::Unknown => {
                 let identifier = data.get::<u8>()?;
-                node = match Header::from_u8(identifier) {
-                    Some(Header::MapHeader) => Option::from(Node::MapHeader(MapHeaderNode::parse(data)?)),
-                    Some(Header::MapData) => Option::from(Node::MapData(MapDataNode::parse(data)?)),
-                    Some(Header::TileArea) => Option::from(Node::TileArea(TileAreaNode::parse(data)?)),
-                    Some(Header::Tile) => Option::from(Node::Tile(TileNode::parse(data)?)),
-                    Some(Header::Item) => Option::from(Node::Item(ItemNode::parse(data)?)),
-                    Some(Header::Towns) => Option::from(Node::Towns(TownsNode::parse(data)?)),
-                    Some(Header::Town) => Option::from(Node::Town(TownNode::parse(data)?)),
-                    Some(Header::HouseTile) => Option::from(Node::HouseTile(HouseTileNode::parse(data)?)),
-                    Some(Header::Waypoints) => Option::from(Node::Waypoints(WaypointsNode::parse(data)?)),
-                    Some(Header::Waypoint) => Option::from(Node::Waypoint(WaypointNode::parse(data)?)),
-                    None => panic!("unknown header 0x{:02X}", identifier),
-                };
 
-                if let Some(node) = &node {
-                    //println!("{}", node);
-                } else {
-                    println!("could not print node");
-                }
-
-                continue;
+                node = Header::from_u8(identifier)
+                    .ok_or_else(|| Error::new(ErrorKind::Other, "from_u8 failed".to_string()))
+                    .and_then(|x| {
+                        Ok(match x {
+                            Header::MapHeader => Node::MapHeader(MapHeaderNode::parse(data)?),
+                            Header::MapData => Node::MapData(MapDataNode::parse(data)?),
+                            Header::TileArea => Node::TileArea(TileAreaNode::parse(data)?),
+                            Header::Tile => Node::Tile(TileNode::parse(data)?),
+                            Header::Item => Node::Item(ItemNode::parse(data)?),
+                            Header::Towns => Node::Towns(TownsNode::parse(data)?),
+                            Header::Town => Node::Town(TownNode::parse(data)?),
+                            Header::HouseTile => Node::HouseTile(HouseTileNode::parse(data)?),
+                            Header::Waypoints => Node::Waypoints(WaypointsNode::parse(data)?),
+                            Header::Waypoint => Node::Waypoint(WaypointNode::parse(data)?),
+                        })
+                    }).expect("unknown header");
+                //println!("{}", node);
             }
+            NODE_ESC => skip = true,
+            NODE_INIT => children.push(read_node(data, true)?),
+            NODE_TERM => return Ok(node),
+            x => println!("unused_byte: 0x{:02X}", x),
         }
-
-        if c_byte == NODE_ESC {
-            skip = true;
-            continue;
-        }
-
-        if c_byte == NODE_INIT {
-            let mut child = read_node(data, true)?;
-            if let Some(child) = child {
-                children.push(child);
-            }
-            continue;
-        }
-
-        if c_byte == NODE_TERM {
-            return Ok(node);
-        }
-
-        //println!("unused_byte: 0x{:02X}", c_byte);
     }
-
-    //Ok(node)
-    Ok(None)
 }

@@ -1,17 +1,13 @@
 // https://github.com/edubart/otclient/blob/e870110875627d55006236b7e4996f28fed9a287/src/client/spritemanager.cpp
 
-use std;
-use std::fs::File;
-use std::io::{Error, Cursor, Read, Write, Seek, SeekFrom};
 use std::collections::HashMap;
+use std::fs::File;
+use std::io::{Error, Read};
 
 use mem_read::*;
-use mem_type::*;
 
-use rayon::prelude::*;
 use image::{ImageBuffer, *};
-
-use std::sync::*;
+use rayon::prelude::*;
 
 type Image = ImageBuffer<Rgba<u8>, Vec<u8>>;
 
@@ -26,17 +22,22 @@ pub fn parse(filename: String) -> Result<SpriteData, Error> {
     let mut file = File::open(filename)?;
     let mut data: Vec<u8> = Vec::new();
     file.read_to_end(&mut data)?;
-    let mut data: &[u8] = data.as_ref();
+    let data: &mut &[u8] = &mut data.as_ref();
 
     let version = data.get()?;
+
+    let count = data.get::<u32>()?;
+    let mut vec = Vec::with_capacity(count as _);
+    vec.extend((0..count).flat_map(|id| {
+        data.get::<u32>()
+            .ok()
+            .and_then(|x| if x == 0 { None } else { Some((id + 1, x)) })
+    }));
+
     Ok(SpriteData {
         version,
-        sprites: (0..data.get::<u32>()?)
-            .flat_map(|id| {
-                data.get::<u32>()
-                    .ok()
-                    .and_then(|x| if x == 0 { None } else { Some((id + 1, x)) })
-            }).par_iter()
+        sprites: vec
+            .into_par_iter()
             .map(|n| (n.0, ImageBuffer::new(32, 32)))
             .collect::<HashMap<_, _>>(),
     })

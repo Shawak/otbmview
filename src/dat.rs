@@ -1,23 +1,16 @@
 // https://github.com/slavidodo/opentibiaunity-datspr-converter/blob/master/OpenTibiaUnity/Core/Sprites/ContentData.cs
 
-use std;
-use std::fs::File;
-use std::io::{Error, Cursor, Read, Write, Seek, SeekFrom};
 use std::collections::HashMap;
-use std::collections::hash_map::DefaultHasher;
+use std::fs::File;
+use std::io::{Error, Read};
 
 use mem_read::*;
-use mem_type::*;
 
 use rand::*;
 
 use num_traits::{FromPrimitive, ToPrimitive};
 
-#[derive(Primitive)]
-#[derive(Hash)]
-#[derive(Eq)]
-#[derive(PartialEq)]
-#[derive(Debug)]
+#[derive(Debug, Eq, Hash, PartialEq, Primitive)]
 pub enum DatAttributesHeader {
     Ground = 0,
     GroundBorder = 1,
@@ -64,19 +57,19 @@ pub enum DatAttributesHeader {
 
     Usable = 254,
 
-    LastAttr = 255
+    LastAttr = 255,
 }
 
 #[derive(Debug)]
 pub struct LightInfo {
     intensity: u16,
-    color: u16
+    color: u16,
 }
 
 #[derive(Debug)]
 pub struct Vector2 {
     x: u16,
-    y: u16
+    y: u16,
 }
 
 #[derive(Debug)]
@@ -86,7 +79,7 @@ pub struct MarketInfo {
     show_as: u16,
     name: String,
     restrict_vocation: u16,
-    required_level: u16
+    required_level: u16,
 }
 
 #[derive(Debug)]
@@ -136,64 +129,74 @@ pub enum DatAttributes {
 
     Usable,
 
-    LastAttr
+    LastAttr,
 }
 
 impl DatAttributes {
-    fn new(header: &DatAttributesHeader, category: &ThingCategory, data: &mut Cursor<Vec<u8>>) -> Result<DatAttributes, Error> {
+    fn new<T: MemRead>(
+        header: &DatAttributesHeader,
+        category: ThingCategory,
+        data: &mut T,
+    ) -> Result<DatAttributes, Error> {
         let r = match header {
-            &DatAttributesHeader::Ground => DatAttributes::Ground(data.get()?),
-            &DatAttributesHeader::Writeable => DatAttributes::Writeable(data.get()?),
-            &DatAttributesHeader::WriteableOnce => DatAttributes::WriteableOnce(data.get()?),
-            &DatAttributesHeader::MinimapColor => DatAttributes::MinimapColor(data.get()?),
-            &DatAttributesHeader::LensHelp => DatAttributes::LensHelp(data.get()?),
-            &DatAttributesHeader::Cloth => DatAttributes::Cloth(data.get()?),
-            &DatAttributesHeader::DefaultAction => DatAttributes::DefaultAction(data.get()?),
+            DatAttributesHeader::Ground => DatAttributes::Ground(data.get()?),
+            DatAttributesHeader::Writeable => DatAttributes::Writeable(data.get()?),
+            DatAttributesHeader::WriteableOnce => DatAttributes::WriteableOnce(data.get()?),
+            DatAttributesHeader::MinimapColor => DatAttributes::MinimapColor(data.get()?),
+            DatAttributesHeader::LensHelp => DatAttributes::LensHelp(data.get()?),
+            DatAttributesHeader::Cloth => DatAttributes::Cloth(data.get()?),
+            DatAttributesHeader::DefaultAction => DatAttributes::DefaultAction(data.get()?),
 
-            &DatAttributesHeader::GroundBorder => DatAttributes::GroundBorder,
-            &DatAttributesHeader::OnBottom => DatAttributes::OnBottom,
-            &DatAttributesHeader::OnTop => DatAttributes::OnTop,
-            &DatAttributesHeader::Container => DatAttributes::Container,
-            &DatAttributesHeader::Stackable => DatAttributes::Stackable,
-            &DatAttributesHeader::ForceUse => DatAttributes::ForceUse,
-            &DatAttributesHeader::MultiUse => DatAttributes::MultiUse,
-            &DatAttributesHeader::FluidContainer => DatAttributes::FluidContainer,
-            &DatAttributesHeader::Splash => DatAttributes::Splash,
-            &DatAttributesHeader::NotWalkable => DatAttributes::NotWalkable,
-            &DatAttributesHeader::NotMoveable => DatAttributes::NotMoveable,
-            &DatAttributesHeader::BlockProjectile => DatAttributes::BlockProjectile,
-            &DatAttributesHeader::NotPathable => DatAttributes::NotPathable,
-            &DatAttributesHeader::NoMoveAnimation => DatAttributes::NoMoveAnimation,
-            &DatAttributesHeader::Pickupable => DatAttributes::Pickupable,
-            &DatAttributesHeader::Hangable => DatAttributes::Hangable,
-            &DatAttributesHeader::HookSouth => DatAttributes::HookSouth,
-            &DatAttributesHeader::HookEast => DatAttributes::HookEast,
-            &DatAttributesHeader::Rotateable => DatAttributes::Rotateable,
-            &DatAttributesHeader::DontHide => DatAttributes::DontHide,
-            &DatAttributesHeader::Translucent => DatAttributes::Translucent,
-            &DatAttributesHeader::LyingCorpse => DatAttributes::LyingCorpse,
-            &DatAttributesHeader::AnimateAlways => DatAttributes::AnimateAlways,
-            &DatAttributesHeader::FullGround => DatAttributes::FullGround,
-            &DatAttributesHeader::Look => DatAttributes::Look,
-            &DatAttributesHeader::Wrapable => DatAttributes::Wrapable,
-            &DatAttributesHeader::Unwrapable => DatAttributes::Unwrapable,
-            &DatAttributesHeader::TopEffect => DatAttributes::TopEffect,
-            &DatAttributesHeader::Usable => DatAttributes::Usable,
+            DatAttributesHeader::GroundBorder => DatAttributes::GroundBorder,
+            DatAttributesHeader::OnBottom => DatAttributes::OnBottom,
+            DatAttributesHeader::OnTop => DatAttributes::OnTop,
+            DatAttributesHeader::Container => DatAttributes::Container,
+            DatAttributesHeader::Stackable => DatAttributes::Stackable,
+            DatAttributesHeader::ForceUse => DatAttributes::ForceUse,
+            DatAttributesHeader::MultiUse => DatAttributes::MultiUse,
+            DatAttributesHeader::FluidContainer => DatAttributes::FluidContainer,
+            DatAttributesHeader::Splash => DatAttributes::Splash,
+            DatAttributesHeader::NotWalkable => DatAttributes::NotWalkable,
+            DatAttributesHeader::NotMoveable => DatAttributes::NotMoveable,
+            DatAttributesHeader::BlockProjectile => DatAttributes::BlockProjectile,
+            DatAttributesHeader::NotPathable => DatAttributes::NotPathable,
+            DatAttributesHeader::NoMoveAnimation => DatAttributes::NoMoveAnimation,
+            DatAttributesHeader::Pickupable => DatAttributes::Pickupable,
+            DatAttributesHeader::Hangable => DatAttributes::Hangable,
+            DatAttributesHeader::HookSouth => DatAttributes::HookSouth,
+            DatAttributesHeader::HookEast => DatAttributes::HookEast,
+            DatAttributesHeader::Rotateable => DatAttributes::Rotateable,
+            DatAttributesHeader::DontHide => DatAttributes::DontHide,
+            DatAttributesHeader::Translucent => DatAttributes::Translucent,
+            DatAttributesHeader::LyingCorpse => DatAttributes::LyingCorpse,
+            DatAttributesHeader::AnimateAlways => DatAttributes::AnimateAlways,
+            DatAttributesHeader::FullGround => DatAttributes::FullGround,
+            DatAttributesHeader::Look => DatAttributes::Look,
+            DatAttributesHeader::Wrapable => DatAttributes::Wrapable,
+            DatAttributesHeader::Unwrapable => DatAttributes::Unwrapable,
+            DatAttributesHeader::TopEffect => DatAttributes::TopEffect,
+            DatAttributesHeader::Usable => DatAttributes::Usable,
 
-            &DatAttributesHeader::Light => DatAttributes::Light(LightInfo { intensity: data.get()?, color: data.get()? }),
-            &DatAttributesHeader::Displacement => DatAttributes::Displacement(Vector2 { x: data.get()?, y: data.get()? }),
+            DatAttributesHeader::Light => DatAttributes::Light(LightInfo {
+                intensity: data.get()?,
+                color: data.get()?,
+            }),
+            DatAttributesHeader::Displacement => DatAttributes::Displacement(Vector2 {
+                x: data.get()?,
+                y: data.get()?,
+            }),
 
-            &DatAttributesHeader::Elevation => DatAttributes::Elevation(data.get()?),
-            &DatAttributesHeader::Market => DatAttributes::Market(MarketInfo {
+            DatAttributesHeader::Elevation => DatAttributes::Elevation(data.get()?),
+            DatAttributesHeader::Market => DatAttributes::Market(MarketInfo {
                 category: data.get()?,
                 trade_as: data.get()?,
                 show_as: data.get()?,
                 name: data.gets()?,
                 restrict_vocation: data.get()?,
-                required_level: data.get()?
+                required_level: data.get()?,
             }),
 
-            _ => panic!("unknown item attribute")
+            _ => panic!("unknown item attribute"),
         };
         Ok(r)
     }
@@ -202,14 +205,14 @@ impl DatAttributes {
 #[derive(Debug)]
 pub struct FrameGroupDuration {
     minimum: u32,
-    maximum: u32
+    maximum: u32,
 }
 
 impl FrameGroupDuration {
-    fn new(data: &mut Cursor<Vec<u8>>) -> Result<FrameGroupDuration, Error> {
+    fn new<T: MemRead>(data: &mut T) -> Result<FrameGroupDuration, Error> {
         Ok(FrameGroupDuration {
             minimum: data.get()?,
-            maximum: data.get()?
+            maximum: data.get()?,
         })
     }
 
@@ -234,11 +237,11 @@ pub struct FrameGroupAnimator {
     animation_direction: u8,
     is_complete: bool,
     current_loop: u8,
-    frame_group_durations: Vec<FrameGroupDuration>
+    frame_group_durations: Vec<FrameGroupDuration>,
 }
 
 impl FrameGroupAnimator {
-    fn new(animation_phases: u8, data: &mut Cursor<Vec<u8>>) -> Result<FrameGroupAnimator, Error> {
+    fn new<T: MemRead>(animation_phases: u8, data: &mut T) -> Result<FrameGroupAnimator, Error> {
         let mut animator = FrameGroupAnimator {
             animation_phases,
             async: data.get::<u8>()? == 0,
@@ -250,7 +253,7 @@ impl FrameGroupAnimator {
             animation_direction: 0,
             is_complete: false,
             current_loop: 0,
-            frame_group_durations: Vec::new()
+            frame_group_durations: Vec::new(),
         };
 
         for _ in 0..animation_phases {
@@ -262,13 +265,10 @@ impl FrameGroupAnimator {
     }
 }
 
-#[derive(Primitive)]
-#[derive(Eq)]
-#[derive(PartialEq)]
-#[derive(Hash)]
+#[derive(Primitive, Eq, PartialEq, Hash)]
 pub enum FrameGroupType {
     Idle = 0,
-    Moving = 1
+    Moving = 1,
 }
 
 #[derive(Debug)]
@@ -282,33 +282,42 @@ pub struct FrameGroup {
     pattern_depth: u8,
     phases: u8,
     animator: Option<FrameGroupAnimator>,
-    sprites: Vec<u32>
+    sprites: Vec<u32>,
 }
 
 impl FrameGroup {
-    fn new(data: &mut Cursor<Vec<u8>>) -> Result<FrameGroup, Error> {
+    fn new<T: MemRead>(data: &mut T) -> Result<FrameGroup, Error> {
         let width = data.get::<u8>()?;
         let height = data.get::<u8>()?;
 
         let mut frame_group = FrameGroup {
             width,
             height,
-            exact_size: if width > 1 || height > 1 { data.get()? } else { 32u8 },
+            exact_size: if width > 1 || height > 1 {
+                data.get()?
+            } else {
+                32u8
+            },
             layers: data.get()?,
             pattern_width: data.get()?,
             pattern_height: data.get()?,
             pattern_depth: data.get()?,
             phases: data.get()?,
             animator: Option::None,
-            sprites: Vec::new()
+            sprites: Vec::new(),
         };
 
         if frame_group.phases > 1 {
-            frame_group.animator = Option::from(FrameGroupAnimator::new(frame_group.phases, data)?);
+            frame_group.animator = Some(FrameGroupAnimator::new(frame_group.phases, data)?);
         }
 
-        let total_sprites: u32 = frame_group.width as u32 * frame_group.height as u32 * frame_group.layers as u32 *
-            frame_group.pattern_width as u32 * frame_group.pattern_height as u32 * frame_group.pattern_depth as u32 * frame_group.phases as u32;
+        let total_sprites: u32 = frame_group.width as u32
+            * frame_group.height as u32
+            * frame_group.layers as u32
+            * frame_group.pattern_width as u32
+            * frame_group.pattern_height as u32
+            * frame_group.pattern_depth as u32
+            * frame_group.phases as u32;
 
         for _ in 0..total_sprites {
             frame_group.sprites.push(data.get()?);
@@ -320,55 +329,65 @@ impl FrameGroup {
     }
 }
 
-#[derive(Primitive)]
-#[derive(Eq)]
-#[derive(PartialEq)]
-#[derive(Hash)]
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Primitive)]
 pub enum ThingCategory {
     Item = 0,
     Creature = 1,
     Effect = 2,
-    Missile = 3
+    Missile = 3,
 }
 
 pub struct Thing {
     id: u16,
     attributes: HashMap<DatAttributesHeader, DatAttributes>,
-    frame_groups: HashMap<FrameGroupType, FrameGroup>
+    frame_groups: HashMap<FrameGroupType, FrameGroup>,
 }
 
 impl Thing {
     fn new(id: u16) -> Thing {
-        Thing { id, attributes: HashMap::new(), frame_groups: HashMap::new() }
+        Thing {
+            id,
+            attributes: HashMap::new(),
+            frame_groups: HashMap::new(),
+        }
     }
 }
 
-const THING_CATEGORIES: &'static[ThingCategory] = &[ThingCategory::Item, ThingCategory::Creature, ThingCategory::Effect, ThingCategory::Missile];
+const THING_CATEGORIES: &[ThingCategory] = &[
+    ThingCategory::Item,
+    ThingCategory::Creature,
+    ThingCategory::Effect,
+    ThingCategory::Missile,
+];
 
-pub fn parse_items(data: &mut Cursor<Vec<u8>>) -> Result<HashMap<&'static ThingCategory, HashMap<u16, Thing>>, Error> {
-    let mut counts: HashMap<&ThingCategory, u16> = HashMap::new();
-    for category in THING_CATEGORIES {
+pub fn parse_items<T: MemRead>(
+    data: &mut T,
+) -> Result<HashMap<ThingCategory, HashMap<u16, Thing>>, Error> {
+    let mut counts = HashMap::new();
+    for &category in THING_CATEGORIES {
         let count = data.get::<u16>()? + 1;
         //println!("count: {}", count);
         counts.insert(category, count);
     }
 
-    let mut things: HashMap<&ThingCategory, HashMap<u16, Thing>> = HashMap::new();
-    for category in THING_CATEGORIES {
-        things.insert(category, HashMap::new());
+    let mut things = HashMap::new();
+    for &category in THING_CATEGORIES {
+        let first_id = if category == ThingCategory::Item {
+            100
+        } else {
+            1
+        };
 
-        let first_id = if category == &ThingCategory::Item { 100 } else { 1 };
-
-        let thing_count = counts[category];
-        for id in first_id..thing_count {
+        let mut map = HashMap::new();
+        for id in first_id..counts[&category] {
             //println!("id: {}/{} {:?}", id, counts[category], category);
             let mut thing = Thing::new(id);
 
             let n = DatAttributesHeader::LastAttr.to_u8().expect("Error");
             for _ in 0..n {
                 //println!("pos: {}", data.position());
-                let header = DatAttributesHeader::from_u8(data.get::<u8>()?).expect("unknown dat attribute");
+                let header =
+                    DatAttributesHeader::from_u8(data.get()?).expect("unknown dat attribute");
                 //println!("header: {:?}", header);
                 if header == DatAttributesHeader::LastAttr {
                     break;
@@ -379,29 +398,39 @@ pub fn parse_items(data: &mut Cursor<Vec<u8>>) -> Result<HashMap<&'static ThingC
                 thing.attributes.insert(header, attr);
             }
 
-            let group_count = if category == &ThingCategory::Creature { data.get::<u8>()? } else { 1 };
+            let group_count = if category == ThingCategory::Creature {
+                data.get::<u8>()?
+            } else {
+                1
+            };
             //println!("group_count: {}", group_count);
             for i in 0..group_count {
-                let group_type = if category == &ThingCategory::Creature { FrameGroupType::from_u8(data.get::<u8>()?).expect("unknown frame group") } else { FrameGroupType::Idle };
-                thing.frame_groups.insert(group_type, FrameGroup::new(data)?);
+                let group_type = if category == ThingCategory::Creature {
+                    FrameGroupType::from_u8(data.get()?).expect("unknown frame group")
+                } else {
+                    FrameGroupType::Idle
+                };
+
+                thing
+                    .frame_groups
+                    .insert(group_type, FrameGroup::new(data)?);
             }
 
-            //things[category][&id] = thing;
-            things.get_mut(category).expect("").insert(id, thing);
+            map.insert(id, thing);
         }
+
+        things.insert(category, map);
     }
 
     Ok(things)
 }
 
-pub fn parse(filename: String) -> Result<HashMap<&'static ThingCategory, HashMap<u16, Thing>>, Error> {
+pub fn parse(filename: String) -> Result<HashMap<ThingCategory, HashMap<u16, Thing>>, Error> {
     let mut file = File::open(filename)?;
     let mut data: Vec<u8> = Vec::new();
     file.read_to_end(&mut data)?;
-    let mut data = Cursor::new(data);
+    let data: &mut &[u8] = &mut data.as_ref();
 
     let signature = data.get::<u32>();
-    let things = parse_items(&mut data)?;
-
-    Ok(things)
+    parse_items(data)
 }
