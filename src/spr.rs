@@ -11,6 +11,8 @@ use mem_type::*;
 use rayon::prelude::*;
 use image::{ImageBuffer, *};
 
+use std::sync::*;
+
 type Image = ImageBuffer<Rgba<u8>, Vec<u8>>;
 
 const SPRITE_DATA_SIZE: u32 = 32 * 32 * 4;
@@ -24,6 +26,26 @@ pub fn parse(filename: String) -> Result<SpriteData, Error> {
     let mut file = File::open(filename)?;
     let mut data: Vec<u8> = Vec::new();
     file.read_to_end(&mut data)?;
+    let mut data: &[u8] = data.as_ref();
+
+    let version = data.get()?;
+    Ok(SpriteData {
+        version,
+        sprites: (0..data.get::<u32>()?)
+            .flat_map(|id| {
+                data.get::<u32>()
+                    .ok()
+                    .and_then(|x| if x == 0 { None } else { Some((id + 1, x)) })
+            }).par_iter()
+            .map(|n| (n.0, ImageBuffer::new(32, 32)))
+            .collect::<HashMap<_, _>>(),
+    })
+}
+
+/*pub fn parse(filename: String) -> Result<SpriteData, Error> {
+    let mut file = File::open(filename)?;
+    let mut data: Vec<u8> = Vec::new();
+    file.read_to_end(&mut data)?;
     let mut data = Cursor::new(data);
 
     let mut spr = SpriteData {
@@ -31,7 +53,31 @@ pub fn parse(filename: String) -> Result<SpriteData, Error> {
         sprites: HashMap::new(),
     };
 
+    // multi thread
     let sprite_count = data.get::<u32>()?;
+    let mut lookup: Vec<(u32, u32)> = Vec::with_capacity(sprite_count as usize);
+    let arc = Arc::new(Mutex::new(spr));
+
+    for id in 1..sprite_count + 1 {
+        let addr = data.get::<u32>()?;
+        if addr == 0 {
+            continue;
+        }
+        lookup.push((id, addr));
+    }
+
+    (1..10).collect();
+
+    lookup.par_iter().for_each(|n| {
+        let mut img: Image = ImageBuffer::new(32, 32);
+
+        arc.lock().unwrap().sprites.insert(n.0, img);
+        //spr.sprites.insert(n.0, img);
+    });
+
+
+    // single thread
+    /*let sprite_count = data.get::<u32>()?;
     for k in 1..sprite_count + 1 {
         let addr = data.get::<u32>()?;
         if addr == 0 {
@@ -71,7 +117,7 @@ pub fn parse(filename: String) -> Result<SpriteData, Error> {
         // img.save(format!("test/{}.png", k))?;
         spr.sprites.insert(k, img);
         data.seek(SeekFrom::Start(before as u64))?;
-    }
+    }*/
 
-    Ok(spr)
-}
+    Ok(arc.to_owned().to_owned().get_mut().)
+}*/
