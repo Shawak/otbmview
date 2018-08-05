@@ -63,7 +63,7 @@ impl std::fmt::Display for Node {
     }
 }
 
-struct MapHeaderNode {
+pub struct MapHeaderNode {
     version: u32,
     map_width: u16,
     map_height: u16,
@@ -83,7 +83,7 @@ impl MapHeaderNode {
     }
 }
 
-struct MapDataNode {}
+pub struct MapDataNode {}
 
 impl MapDataNode {
     fn parse(data: &mut Cursor<Vec<u8>>) -> Result<MapDataNode, Error> {
@@ -91,7 +91,7 @@ impl MapDataNode {
     }
 }
 
-struct TileAreaNode {
+pub struct TileAreaNode {
     x: u16,
     y: u16,
     z: u8,
@@ -109,7 +109,7 @@ impl TileAreaNode {
     }
 }
 
-struct TileNode {
+pub struct TileNode {
     x: u8,
     y: u8,
 
@@ -125,7 +125,7 @@ impl TileNode {
     }
 }
 
-struct ItemNode {
+pub struct ItemNode {
     id: u16,
 
     // content: Vec<???>
@@ -139,7 +139,7 @@ impl ItemNode {
     }
 }
 
-struct HouseTileNode {
+pub struct HouseTileNode {
     x: u16,
     y: u16,
     house_id: u32,
@@ -157,7 +157,7 @@ impl HouseTileNode {
     }
 }
 
-struct WaypointsNode {
+pub struct WaypointsNode {
     // nodes: Vec<WaypontNode>
 }
 
@@ -167,7 +167,7 @@ impl WaypointsNode {
     }
 }
 
-struct WaypointNode {
+pub struct WaypointNode {
     name: String,
     x: u16,
     y: u16,
@@ -185,7 +185,7 @@ impl WaypointNode {
     }
 }
 
-struct TownsNode {
+pub struct TownsNode {
     //towns: Vec<TownNode>
 }
 
@@ -195,7 +195,7 @@ impl TownsNode {
     }
 }
 
-struct TownNode {
+pub struct TownNode {
     town_id: u32,
     name: String,
     x: u16,
@@ -261,7 +261,7 @@ fn read_node(data: &mut Cursor<Vec<u8>>, is_child: bool) -> Result<Option<Node>,
                 };
 
                 if let Some(node) = &node {
-                    println!("{}", node);
+                    //println!("{}", node);
                 } else {
                     println!("could not print node");
                 }

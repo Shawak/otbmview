@@ -18,7 +18,7 @@ use num_traits::{FromPrimitive, ToPrimitive};
 #[derive(Eq)]
 #[derive(PartialEq)]
 #[derive(Debug)]
-enum DatAttributesHeader {
+pub enum DatAttributesHeader {
     Ground = 0,
     GroundBorder = 1,
     OnBottom = 2,
@@ -68,19 +68,19 @@ enum DatAttributesHeader {
 }
 
 #[derive(Debug)]
-struct LightInfo {
+pub struct LightInfo {
     intensity: u16,
     color: u16
 }
 
 #[derive(Debug)]
-struct Vector2 {
+pub struct Vector2 {
     x: u16,
     y: u16
 }
 
 #[derive(Debug)]
-struct MarketInfo {
+pub struct MarketInfo {
     category: u16,
     trade_as: u16,
     show_as: u16,
@@ -90,7 +90,7 @@ struct MarketInfo {
 }
 
 #[derive(Debug)]
-enum DatAttributes {
+pub enum DatAttributes {
     Ground(u16),
     GroundBorder,
     OnBottom,
@@ -200,7 +200,7 @@ impl DatAttributes {
 }
 
 #[derive(Debug)]
-struct FrameGroupDuration {
+pub struct FrameGroupDuration {
     minimum: u32,
     maximum: u32
 }
@@ -223,7 +223,7 @@ impl FrameGroupDuration {
 }
 
 #[derive(Debug)]
-struct FrameGroupAnimator {
+pub struct FrameGroupAnimator {
     animation_phases: u8,
     async: bool,
     loop_count: i32,
@@ -266,13 +266,13 @@ impl FrameGroupAnimator {
 #[derive(Eq)]
 #[derive(PartialEq)]
 #[derive(Hash)]
-enum FrameGroupType {
+pub enum FrameGroupType {
     Idle = 0,
     Moving = 1
 }
 
 #[derive(Debug)]
-struct FrameGroup {
+pub struct FrameGroup {
     width: u8,
     height: u8,
     exact_size: u8,
@@ -325,14 +325,14 @@ impl FrameGroup {
 #[derive(PartialEq)]
 #[derive(Hash)]
 #[derive(Debug)]
-enum ThingCategory {
+pub enum ThingCategory {
     Item = 0,
     Creature = 1,
     Effect = 2,
     Missile = 3
 }
 
-struct Thing {
+pub struct Thing {
     id: u16,
     attributes: HashMap<DatAttributesHeader, DatAttributes>,
     frame_groups: HashMap<FrameGroupType, FrameGroup>
@@ -346,7 +346,7 @@ impl Thing {
 
 const THING_CATEGORIES: &'static[ThingCategory] = &[ThingCategory::Item, ThingCategory::Creature, ThingCategory::Effect, ThingCategory::Missile];
 
-pub fn parse_items(data: &mut Cursor<Vec<u8>>) -> Result<(), Error> {
+pub fn parse_items(data: &mut Cursor<Vec<u8>>) -> Result<HashMap<&'static ThingCategory, HashMap<u16, Thing>>, Error> {
     let mut counts: HashMap<&ThingCategory, u16> = HashMap::new();
     for category in THING_CATEGORIES {
         let count = data.get::<u16>()? + 1;
@@ -362,7 +362,7 @@ pub fn parse_items(data: &mut Cursor<Vec<u8>>) -> Result<(), Error> {
 
         let thing_count = counts[category];
         for id in first_id..thing_count {
-            //println!("id: {} {:?}", id, category);
+            //println!("id: {}/{} {:?}", id, counts[category], category);
             let mut thing = Thing::new(id);
 
             let n = DatAttributesHeader::LastAttr.to_u8().expect("Error");
@@ -391,10 +391,10 @@ pub fn parse_items(data: &mut Cursor<Vec<u8>>) -> Result<(), Error> {
         }
     }
 
-    Ok(())
+    Ok(things)
 }
 
-pub fn parse(filename: String) -> Result</*HashMap<&ThingCategory, HashMap<u16, Thing>>*/(), Error> {
+pub fn parse(filename: String) -> Result<HashMap<&'static ThingCategory, HashMap<u16, Thing>>, Error> {
     let mut file = File::open(filename)?;
     let mut data: Vec<u8> = Vec::new();
     file.read_to_end(&mut data)?;
@@ -403,5 +403,5 @@ pub fn parse(filename: String) -> Result</*HashMap<&ThingCategory, HashMap<u16, 
     let signature = data.get::<u32>();
     let things = parse_items(&mut data)?;
 
-    Ok(())
+    Ok(things)
 }
