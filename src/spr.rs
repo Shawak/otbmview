@@ -38,8 +38,40 @@ pub fn parse(filename: String) -> Result<SpriteData, Error> {
         version,
         sprites: vec
             .into_par_iter()
-            .map(|n| (n.0, ImageBuffer::new(32, 32)))
-            .collect::<HashMap<_, _>>(),
+            .map(|n| {
+                let mut img: Image = ImageBuffer::new(32, 32);
+
+                let color_key = data.get::<[u8; 3]>()?;
+                let size = data.get()?;
+
+                let mut write = 0;
+                let mut read = 0;
+                let mut i = 0;
+                while read < size && write < SPRITE_DATA_SIZE {
+                    let transparent_count = data.get::<u16>()?;
+                    let colored_count = data.get::<u16>()?;
+
+                    for _ in 0..transparent_count {
+                        img.get_pixel_mut(i / 32, i % 32).data = [0, 0, 0, 0];
+                        i += 1;
+                    }
+
+                    for _ in 0..colored_count {
+                        let (r, g, b, a) = (data.get()?, data.get()?, data.get()?, 0);
+                        img.get_pixel_mut(i / 32, i % 32).data = [r, g, b, a];
+                        i += 1;
+                    }
+
+                    write += 4 * transparent_count as u32 + 4 * colored_count as u32;
+                    read += 4 + (3 /* channels */ * colored_count);
+                }
+
+                img.save(format!("test/{}.png", n.0))?;
+
+                Ok((n.0, img))
+            })
+            //.collect::<HashMap<_, _>>(),
+            .collect::<Result<_, _>>()?,
     })
 }
 

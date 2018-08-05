@@ -261,28 +261,24 @@ fn read_node<T: MemRead>(data: &mut T, is_child: bool) -> Result<Node, Error> {
             NODE_INIT | NODE_TERM if node == Node::Unknown => {
                 let identifier = data.get::<u8>()?;
 
-                node = Header::from_u8(identifier)
-                    .ok_or_else(|| Error::new(ErrorKind::Other, "from_u8 failed".to_string()))
-                    .and_then(|x| {
-                        Ok(match x {
-                            Header::MapHeader => Node::MapHeader(MapHeaderNode::parse(data)?),
-                            Header::MapData => Node::MapData(MapDataNode::parse(data)?),
-                            Header::TileArea => Node::TileArea(TileAreaNode::parse(data)?),
-                            Header::Tile => Node::Tile(TileNode::parse(data)?),
-                            Header::Item => Node::Item(ItemNode::parse(data)?),
-                            Header::Towns => Node::Towns(TownsNode::parse(data)?),
-                            Header::Town => Node::Town(TownNode::parse(data)?),
-                            Header::HouseTile => Node::HouseTile(HouseTileNode::parse(data)?),
-                            Header::Waypoints => Node::Waypoints(WaypointsNode::parse(data)?),
-                            Header::Waypoint => Node::Waypoint(WaypointNode::parse(data)?),
-                        })
-                    }).expect("unknown header");
+                node = match Header::from_u8(identifier).expect("from_u8 failed") {
+                    Header::MapHeader => Node::MapHeader(MapHeaderNode::parse(data)?),
+                    Header::MapData => Node::MapData(MapDataNode::parse(data)?),
+                    Header::TileArea => Node::TileArea(TileAreaNode::parse(data)?),
+                    Header::Tile => Node::Tile(TileNode::parse(data)?),
+                    Header::Item => Node::Item(ItemNode::parse(data)?),
+                    Header::Towns => Node::Towns(TownsNode::parse(data)?),
+                    Header::Town => Node::Town(TownNode::parse(data)?),
+                    Header::HouseTile => Node::HouseTile(HouseTileNode::parse(data)?),
+                    Header::Waypoints => Node::Waypoints(WaypointsNode::parse(data)?),
+                    Header::Waypoint => Node::Waypoint(WaypointNode::parse(data)?),
+                };
                 //println!("{}", node);
             }
             NODE_ESC => skip = true,
             NODE_INIT => children.push(read_node(data, true)?),
             NODE_TERM => return Ok(node),
-            x => println!("unused_byte: 0x{:02X}", x),
+            x => (), /*println!("unused_byte: 0x{:02X}", x)*/
         }
     }
 }
