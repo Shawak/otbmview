@@ -23,6 +23,7 @@ pub fn parse(filename: String) -> Result<SpriteData, Error> {
     let mut data: Vec<u8> = Vec::new();
     file.read_to_end(&mut data)?;
     let data: &mut &[u8] = &mut data.as_ref();
+    let begin = data.clone();
 
     let version = data.get()?;
 
@@ -39,6 +40,7 @@ pub fn parse(filename: String) -> Result<SpriteData, Error> {
         sprites: vec
             .into_par_iter()
             .map(|n| {
+                let data: &mut &[u8] = &mut &begin[n.1 as _..];
                 let mut img: Image = ImageBuffer::new(32, 32);
 
                 let color_key = data.get::<[u8; 3]>()?;
@@ -71,7 +73,7 @@ pub fn parse(filename: String) -> Result<SpriteData, Error> {
                 Ok((n.0, img))
             })
             //.collect::<HashMap<_, _>>(),
-            .collect::<Result<_, _>>()?,
+            .collect::<Result<_, Error>>()?,
     })
 }
 
