@@ -47,4 +47,24 @@ mod tests {
         });
     }
 
+    #[bench]
+    fn bench_draw_100(b: &mut Bencher) {
+        b.iter(|| -> Result<()> {
+            for n in 1..100 {
+                let mut main: Image = ImageBuffer::new(64, 64);
+                for pixel in main.pixels_mut() {
+                    *pixel = Rgba([255u8, 0u8, 0u8, 255u8]);
+                }
+
+                let mut img: Image = ImageBuffer::new(32, 32);
+                for pixel in img.pixels_mut() {
+                    *pixel = Rgba([0u8, 0u8, 0u8, 255u8]);
+                }
+
+                main.draw(0, 0, &mut img);
+            }
+            Ok(())
+        });
+    }
+
 }*/

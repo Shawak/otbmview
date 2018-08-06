@@ -9,13 +9,19 @@ use mem_read::*;
 use image::{ImageBuffer, *};
 use rayon::prelude::*;
 
-type Image = ImageBuffer<Rgba<u8>, Vec<u8>>;
+use draw::*;
 
 const SPRITE_DATA_SIZE: u32 = 32 * 32 * 4;
 
 pub struct SpriteData {
     pub version: u32,
     pub sprites: HashMap<u32, Image>,
+}
+
+impl SpriteData {
+    fn get_image(&self, id: u32) -> &Image {
+        &self.sprites[&id]
+    }
 }
 
 pub fn parse(filename: String) -> Result<SpriteData, Error> {

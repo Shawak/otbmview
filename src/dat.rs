@@ -3,10 +3,14 @@
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{Error, Read};
+use image::{ImageBuffer, *};
 
 use mem_read::*;
 
+use spr::*;
+
 use rand::*;
+use draw::*;
 
 use num_traits::{FromPrimitive, ToPrimitive};
 
@@ -139,55 +143,55 @@ impl DatAttributes {
         data: &mut T,
     ) -> Result<DatAttributes, Error> {
         let r = match header {
-            DatAttributesHeader::Ground => DatAttributes::Ground(data.get()?),
-            DatAttributesHeader::Writeable => DatAttributes::Writeable(data.get()?),
-            DatAttributesHeader::WriteableOnce => DatAttributes::WriteableOnce(data.get()?),
-            DatAttributesHeader::MinimapColor => DatAttributes::MinimapColor(data.get()?),
-            DatAttributesHeader::LensHelp => DatAttributes::LensHelp(data.get()?),
-            DatAttributesHeader::Cloth => DatAttributes::Cloth(data.get()?),
-            DatAttributesHeader::DefaultAction => DatAttributes::DefaultAction(data.get()?),
+            &DatAttributesHeader::Ground => DatAttributes::Ground(data.get()?),
+            &DatAttributesHeader::Writeable => DatAttributes::Writeable(data.get()?),
+            &DatAttributesHeader::WriteableOnce => DatAttributes::WriteableOnce(data.get()?),
+            &DatAttributesHeader::MinimapColor => DatAttributes::MinimapColor(data.get()?),
+            &DatAttributesHeader::LensHelp => DatAttributes::LensHelp(data.get()?),
+            &DatAttributesHeader::Cloth => DatAttributes::Cloth(data.get()?),
+            &DatAttributesHeader::DefaultAction => DatAttributes::DefaultAction(data.get()?),
 
-            DatAttributesHeader::GroundBorder => DatAttributes::GroundBorder,
-            DatAttributesHeader::OnBottom => DatAttributes::OnBottom,
-            DatAttributesHeader::OnTop => DatAttributes::OnTop,
-            DatAttributesHeader::Container => DatAttributes::Container,
-            DatAttributesHeader::Stackable => DatAttributes::Stackable,
-            DatAttributesHeader::ForceUse => DatAttributes::ForceUse,
-            DatAttributesHeader::MultiUse => DatAttributes::MultiUse,
-            DatAttributesHeader::FluidContainer => DatAttributes::FluidContainer,
-            DatAttributesHeader::Splash => DatAttributes::Splash,
-            DatAttributesHeader::NotWalkable => DatAttributes::NotWalkable,
-            DatAttributesHeader::NotMoveable => DatAttributes::NotMoveable,
-            DatAttributesHeader::BlockProjectile => DatAttributes::BlockProjectile,
-            DatAttributesHeader::NotPathable => DatAttributes::NotPathable,
-            DatAttributesHeader::NoMoveAnimation => DatAttributes::NoMoveAnimation,
-            DatAttributesHeader::Pickupable => DatAttributes::Pickupable,
-            DatAttributesHeader::Hangable => DatAttributes::Hangable,
-            DatAttributesHeader::HookSouth => DatAttributes::HookSouth,
-            DatAttributesHeader::HookEast => DatAttributes::HookEast,
-            DatAttributesHeader::Rotateable => DatAttributes::Rotateable,
-            DatAttributesHeader::DontHide => DatAttributes::DontHide,
-            DatAttributesHeader::Translucent => DatAttributes::Translucent,
-            DatAttributesHeader::LyingCorpse => DatAttributes::LyingCorpse,
-            DatAttributesHeader::AnimateAlways => DatAttributes::AnimateAlways,
-            DatAttributesHeader::FullGround => DatAttributes::FullGround,
-            DatAttributesHeader::Look => DatAttributes::Look,
-            DatAttributesHeader::Wrapable => DatAttributes::Wrapable,
-            DatAttributesHeader::Unwrapable => DatAttributes::Unwrapable,
-            DatAttributesHeader::TopEffect => DatAttributes::TopEffect,
-            DatAttributesHeader::Usable => DatAttributes::Usable,
+            &DatAttributesHeader::GroundBorder => DatAttributes::GroundBorder,
+            &DatAttributesHeader::OnBottom => DatAttributes::OnBottom,
+            &DatAttributesHeader::OnTop => DatAttributes::OnTop,
+            &DatAttributesHeader::Container => DatAttributes::Container,
+            &DatAttributesHeader::Stackable => DatAttributes::Stackable,
+            &DatAttributesHeader::ForceUse => DatAttributes::ForceUse,
+            &DatAttributesHeader::MultiUse => DatAttributes::MultiUse,
+            &DatAttributesHeader::FluidContainer => DatAttributes::FluidContainer,
+            &DatAttributesHeader::Splash => DatAttributes::Splash,
+            &DatAttributesHeader::NotWalkable => DatAttributes::NotWalkable,
+            &DatAttributesHeader::NotMoveable => DatAttributes::NotMoveable,
+            &DatAttributesHeader::BlockProjectile => DatAttributes::BlockProjectile,
+            &DatAttributesHeader::NotPathable => DatAttributes::NotPathable,
+            &DatAttributesHeader::NoMoveAnimation => DatAttributes::NoMoveAnimation,
+            &DatAttributesHeader::Pickupable => DatAttributes::Pickupable,
+            &DatAttributesHeader::Hangable => DatAttributes::Hangable,
+            &DatAttributesHeader::HookSouth => DatAttributes::HookSouth,
+            &DatAttributesHeader::HookEast => DatAttributes::HookEast,
+            &DatAttributesHeader::Rotateable => DatAttributes::Rotateable,
+            &DatAttributesHeader::DontHide => DatAttributes::DontHide,
+            &DatAttributesHeader::Translucent => DatAttributes::Translucent,
+            &DatAttributesHeader::LyingCorpse => DatAttributes::LyingCorpse,
+            &DatAttributesHeader::AnimateAlways => DatAttributes::AnimateAlways,
+            &DatAttributesHeader::FullGround => DatAttributes::FullGround,
+            &DatAttributesHeader::Look => DatAttributes::Look,
+            &DatAttributesHeader::Wrapable => DatAttributes::Wrapable,
+            &DatAttributesHeader::Unwrapable => DatAttributes::Unwrapable,
+            &DatAttributesHeader::TopEffect => DatAttributes::TopEffect,
+            &DatAttributesHeader::Usable => DatAttributes::Usable,
 
-            DatAttributesHeader::Light => DatAttributes::Light(LightInfo {
+            &DatAttributesHeader::Light => DatAttributes::Light(LightInfo {
                 intensity: data.get()?,
                 color: data.get()?,
             }),
-            DatAttributesHeader::Displacement => DatAttributes::Displacement(Vector2 {
+            &DatAttributesHeader::Displacement => DatAttributes::Displacement(Vector2 {
                 x: data.get()?,
                 y: data.get()?,
             }),
 
-            DatAttributesHeader::Elevation => DatAttributes::Elevation(data.get()?),
-            DatAttributesHeader::Market => DatAttributes::Market(MarketInfo {
+            &DatAttributesHeader::Elevation => DatAttributes::Elevation(data.get()?),
+            &DatAttributesHeader::Market => DatAttributes::Market(MarketInfo {
                 category: data.get()?,
                 trade_as: data.get()?,
                 show_as: data.get()?,
@@ -350,6 +354,26 @@ impl Thing {
             attributes: HashMap::new(),
             frame_groups: HashMap::new(),
         }
+    }
+}
+
+impl Thing {
+    fn export_image(&self, spr: SpriteData, filename: String) {
+        let frame = &self.frame_groups[&FrameGroupType::Idle];
+
+        let mut img: Image = ImageBuffer::new(
+            32
+            * frame.width as u32
+            * frame.layers as u32
+            * frame.pattern_width as u32,
+            32
+            * frame.height as u32
+            * frame.phases as u32
+            * frame.pattern_height as u32
+            * frame.pattern_depth as u32
+        );
+
+
     }
 }
 
