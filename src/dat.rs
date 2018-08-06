@@ -11,6 +11,7 @@ use spr::*;
 
 use rand::*;
 use draw::*;
+use size::*;
 
 use num_traits::{FromPrimitive, ToPrimitive};
 
@@ -343,14 +344,16 @@ pub enum ThingCategory {
 
 pub struct Thing {
     id: u16,
+    category: ThingCategory,
     attributes: HashMap<DatAttributesHeader, DatAttributes>,
     frame_groups: HashMap<FrameGroupType, FrameGroup>,
 }
 
 impl Thing {
-    fn new(id: u16) -> Thing {
+    fn new(id: u16, category: ThingCategory) -> Thing {
         Thing {
             id,
+            category,
             attributes: HashMap::new(),
             frame_groups: HashMap::new(),
         }
@@ -358,22 +361,71 @@ impl Thing {
 }
 
 impl Thing {
-    fn export_image(&self, spr: SpriteData, filename: String) {
+    fn get_texture(&self, spr: SpriteData) -> Image {
         let frame = &self.frame_groups[&FrameGroupType::Idle];
 
-        let mut img: Image = ImageBuffer::new(
-            32
-            * frame.width as u32
-            * frame.layers as u32
-            * frame.pattern_width as u32,
-            32
-            * frame.height as u32
-            * frame.phases as u32
-            * frame.pattern_height as u32
-            * frame.pattern_depth as u32
-        );
+        let mut texture_layers = 1;
+        let mut num_layers = frame.layers;
+        if self.category == ThingCategory::Creature && frame.layers >= 2 {
+            texture_layers = 5;
+            num_layers = 5;
+        }
+
+        let index_size = texture_layers * frame.pattern_width * frame.pattern_height * frame.pattern_depth;
+        let texture_size = Thing::get_best_texture_dimension(&frame, frame.width as _, frame.height as _, index_size as _);
+
+        let img: Image = ImageBuffer::new(32 * texture_size.width as u32, 32 * texture_size.height as u32);
 
 
+        // TODO
+
+
+        ImageBuffer::new(1, 1)
+    }
+
+    fn get_best_texture_dimension(frame: &FrameGroup, mut w: i32, mut h: i32, count: i32) -> Size {
+        const MAX: i32 = 32;
+
+        let mut k = 1i32;
+        while k < w {
+            k <<= 1;
+        }
+        w = k;
+
+        k = 1;
+        while k < h {
+            k <<= 1;
+        }
+        h = k;
+
+        let num_sprites = w * h * count;
+        assert!(num_sprites <= MAX * MAX);
+        assert!(w <= MAX);
+        assert!(h <= MAX);
+
+        let mut i = w;
+        let mut j = h;
+
+        let mut best_dimension = Size::new(MAX, MAX);
+        while i <= MAX {
+            while j <= MAX {
+                let candidate_dimension = Size::new(i, j);
+                if candidate_dimension.area() < frame.sprites.len() as _ {
+                    continue;
+                }
+
+                if candidate_dimension.area() < best_dimension.area()
+                    || candidate_dimension.area() == best_dimension.area()
+                        && candidate_dimension.width + candidate_dimension.height < best_dimension.width + best_dimension.height {
+                    best_dimension = candidate_dimension;
+                }
+
+                j <<= 1;
+            }
+            i <<= 1;
+        }
+
+        best_dimension
     }
 }
 
@@ -405,7 +457,7 @@ pub fn parse_items<T: MemRead>(
         let mut map = HashMap::new();
         for id in first_id..counts[&category] {
             //println!("id: {}/{} {:?}", id, counts[category], category);
-            let mut thing = Thing::new(id);
+            let mut thing = Thing::new(id, category);
 
             let n = DatAttributesHeader::LastAttr.to_u8().expect("Error");
             for _ in 0..n {

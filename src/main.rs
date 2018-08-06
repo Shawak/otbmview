@@ -12,6 +12,7 @@ mod mem_read;
 mod otbm;
 mod spr;
 mod draw;
+mod size;
 
 use std::io::{stdout, Error, Write};
 
@@ -21,10 +22,15 @@ use draw::*;
 
 fn main() -> Result<(), Error> {
 
+
+
+
     println!(" done");
 
     let mut s = String::new();
     std::io::stdin().read_line(&mut s);
+
+    // -------------
 
     print!("Loading otbm..");
     stdout().flush()?;
