@@ -12,6 +12,7 @@ use spr::*;
 use rand::*;
 use draw::*;
 use size::*;
+use point::*;
 
 use num_traits::{FromPrimitive, ToPrimitive};
 
@@ -280,7 +281,7 @@ pub enum FrameGroupType {
 pub struct FrameGroup {
     width: u8,
     height: u8,
-    exact_size: u8,
+    exact_size: i32,
     layers: u8,
     pattern_width: u8,
     pattern_height: u8,
@@ -299,9 +300,10 @@ impl FrameGroup {
             width,
             height,
             exact_size: if width > 1 || height > 1 {
-                data.get()?
+                let real_size: u8 = data.get()?;
+                std::cmp::min(real_size as i32, std::cmp::max(width as i32 * 32, height as i32 * 32))
             } else {
-                32u8
+                32
             },
             layers: data.get()?,
             pattern_width: data.get()?,
@@ -332,6 +334,25 @@ impl FrameGroup {
 
         Ok(frame_group)
     }
+
+    fn get_texture_index(&self, l: i32, x: i32, y: i32, z: i32) -> i32 {
+        return ((l * self.pattern_depth as i32 + z)
+            * self.pattern_height as i32 + y)
+            * self.pattern_width as i32 + x;
+    }
+
+    fn get_sprite_index(&self, w: i32, h: i32, l: i32, x: i32, y: i32, z: i32, a: i32) -> i32 {
+        let index =
+            ((((((a % self.phases as i32)
+            *  self.pattern_depth as i32 + z)
+            * self.pattern_height as i32 + y)
+            * self.pattern_width as i32 + x)
+            * self.layers as i32 + l)
+            * self.height as i32 + h)
+            * self.width as i32;
+        assert!((index as usize) < self.sprites.len());
+        index
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Primitive)]
@@ -361,8 +382,11 @@ impl Thing {
 }
 
 impl Thing {
-    fn get_texture(&self, spr: SpriteData) -> Image {
+
+    pub fn get_texture(&self, spr: &SpriteData) -> Image {
         let frame = &self.frame_groups[&FrameGroupType::Idle];
+        println!("ID: {}", &self.id);
+        println!("category: {:?}", &self.category);
 
         let mut texture_layers = 1;
         let mut num_layers = frame.layers;
@@ -371,16 +395,56 @@ impl Thing {
             num_layers = 5;
         }
 
+        println!("{:?}", self.attributes);
+
         let index_size = texture_layers * frame.pattern_width * frame.pattern_height * frame.pattern_depth;
+        println!("frame: {:?}", frame);
         let texture_size = Thing::get_best_texture_dimension(&frame, frame.width as _, frame.height as _, index_size as _);
+        println!("texture_size: {:?}", texture_size);
 
-        let img: Image = ImageBuffer::new(32 * texture_size.width as u32, 32 * texture_size.height as u32);
+        let mut full_image: Image = ImageBuffer::new(32 * texture_size.width as u32, 32 * texture_size.height as u32);
 
+        for z in 0..frame.pattern_depth {
+            for y in 0..frame.pattern_height {
+                for x in 0..frame.pattern_width {
+                    for l in 0..frame.layers {
+                        let sprite_mask = self.category == ThingCategory::Creature && l > 0;
+                        let frame_index = frame.get_texture_index((l %  texture_layers) as _, x as _, y as _, z as _);
+                        println!("{}", frame_index);
+                        let frame_pos = Point::new(
+                            (frame_index % (texture_size.width / frame.width as i32) * frame.width as i32) * 32,
+                            (frame_index / (texture_size.width / frame.width as i32) * frame.height as i32) * 32);
 
-        // TODO
+                        for h in 0..frame.height {
+                            for w in 0..frame.width {
+                                println!("w, h: {} {}", h, w);
+                                let sprite_index = frame.get_sprite_index(w as _, h as _, if sprite_mask { 1i32 } else { l as i32 }, x as _, y as _, z as _, 0 /* TODO: animationPhase */);
+                                println!("sprite_index: {} {}", sprite_index, frame.sprites[sprite_index as usize]);
+                                let sprite_image_opt = spr.get_image(frame.sprites[sprite_index as usize]);
+                                if let Some(sprite_image_original) = sprite_image_opt {
+                                    let mut sprite_image = sprite_image_original.clone();
 
+                                    if sprite_mask {
+                                        sprite_image.mask(&MASK_COLORS[l as usize - 1]);
+                                    }
+                                    println!("blit?");
+                                    let sprite_pos = Point::new((frame.width as i32 - w as i32 - 1) * 32, (frame.height as i32 - h as i32 - 1) * 32);
+                                    println!("sprite_pos: {:?}", sprite_pos);
+                                    println!("frame_pos: {:?}", frame_pos);
+                                    full_image.blit(frame_pos + sprite_pos, &sprite_image);
+                                }
+                            }
+                        }
 
-        ImageBuffer::new(1, 1)
+                        // TODO: draw rects
+                        // https://github.com/edubart/otclient/blob/master/src/client/thingtype.cpp#L478
+                    }
+                }
+            }
+        }
+
+        //ImageBuffer::new(1, 1)
+        full_image
     }
 
     fn get_best_texture_dimension(frame: &FrameGroup, mut w: i32, mut h: i32, count: i32) -> Size {
@@ -404,20 +468,19 @@ impl Thing {
         assert!(h <= MAX);
 
         let mut i = w;
-        let mut j = h;
 
         let mut best_dimension = Size::new(MAX, MAX);
         while i <= MAX {
+            let mut j = h;
             while j <= MAX {
                 let candidate_dimension = Size::new(i, j);
-                if candidate_dimension.area() < frame.sprites.len() as _ {
+                if candidate_dimension.area() < num_sprites {
+                    j <<= 1;
                     continue;
                 }
-
-                if candidate_dimension.area() < best_dimension.area()
-                    || candidate_dimension.area() == best_dimension.area()
-                        && candidate_dimension.width + candidate_dimension.height < best_dimension.width + best_dimension.height {
-                    best_dimension = candidate_dimension;
+                if candidate_dimension.area() < best_dimension.area() ||
+                    (candidate_dimension.area() == best_dimension.area() && candidate_dimension.width + candidate_dimension.height < best_dimension.width + best_dimension.height) {
+                    best_dimension = candidate_dimension.clone();
                 }
 
                 j <<= 1;
@@ -456,7 +519,7 @@ pub fn parse_items<T: MemRead>(
 
         let mut map = HashMap::new();
         for id in first_id..counts[&category] {
-            //println!("id: {}/{} {:?}", id, counts[category], category);
+            //println!("id: {}/{} {:?}", id, counts[&category], category);
             let mut thing = Thing::new(id, category);
 
             let n = DatAttributesHeader::LastAttr.to_u8().expect("Error");
@@ -469,7 +532,7 @@ pub fn parse_items<T: MemRead>(
                     break;
                 }
 
-                let mut attr = DatAttributes::new(&header, category, data)?;
+                let attr = DatAttributes::new(&header, category, data)?;
                 //println!(" > {:?} -> {:?}", header, attr);
                 thing.attributes.insert(header, attr);
             }
@@ -487,9 +550,11 @@ pub fn parse_items<T: MemRead>(
                     FrameGroupType::Idle
                 };
 
+                let frame_group = FrameGroup::new(data)?;
+
                 thing
                     .frame_groups
-                    .insert(group_type, FrameGroup::new(data)?);
+                    .insert(group_type, frame_group);
             }
 
             map.insert(id, thing);

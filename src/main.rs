@@ -1,4 +1,4 @@
-#![allow(unused_variables)]
+#![allow(dead_code)]
 
 #[macro_use]
 extern crate enum_primitive_derive;
@@ -11,24 +11,20 @@ mod dat;
 mod mem_read;
 mod otbm;
 mod spr;
-mod draw;
 mod size;
+mod point;
+mod draw;
 
 use std::io::{stdout, Error, Write};
 
 use image::{GenericImage, ImageBuffer, Rgba};
 
 use draw::*;
+use dat::ThingCategory;
 
 fn main() -> Result<(), Error> {
 
 
-
-
-    println!(" done");
-
-    let mut s = String::new();
-    std::io::stdin().read_line(&mut s);
 
     // -------------
 
@@ -52,8 +48,18 @@ fn main() -> Result<(), Error> {
 
     //let img: ImageBuffer<Rgba<u8>, Vec<u8>> = ImageBuffer::new(32000 * 32, 32000 * 32);
 
+    for (id, thing) in &dat[&ThingCategory::Item] {
+        thing.get_texture(&spr).save(format!("test/{}.png", id))?;
+    }
+
+    //dat[&ThingCategory::Item][&486].get_texture(&spr).save(format!("test/{}.png", 486))?;
+
+    /*dat[&ThingCategory::Item][&103].get_texture(&spr).save(format!("test/{}.png", 103))?;
+    spr.get_image(537).save(format!("test/{}-img.png", 537))?;*/
+
+    println!("done!");
     let mut s = String::new();
-    std::io::stdin().read_line(&mut s);
+    std::io::stdin().read_line(&mut s)?;
 
     Ok(())
 }

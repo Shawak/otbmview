@@ -19,8 +19,8 @@ pub struct SpriteData {
 }
 
 impl SpriteData {
-    fn get_image(&self, id: u32) -> &Image {
-        &self.sprites[&id]
+    pub fn get_image(&self, id: u32) -> Option<&Image> {
+        self.sprites.get(&id)
     }
 }
 
@@ -65,7 +65,7 @@ pub fn parse(filename: String) -> Result<SpriteData, Error> {
                     }
 
                     for _ in 0..colored_count {
-                        let (r, g, b, a) = (data.get()?, data.get()?, data.get()?, 0);
+                        let (r, g, b, a) = (data.get()?, data.get()?, data.get()?, 0); // TODO: , 0)?
                         img.get_pixel_mut(i / 32, i % 32).data = [r, g, b, a];
                         i += 1;
                     }
@@ -74,7 +74,7 @@ pub fn parse(filename: String) -> Result<SpriteData, Error> {
                     read += 4 + (3 /* channels */ * colored_count);
                 }
 
-                //img.save(format!("test/{}.png", n.0))?;
+                //img.save(format!("sprites/{}.png", n.0))?;
 
                 Ok((n.0, img))
             })

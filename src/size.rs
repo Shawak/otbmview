@@ -2,6 +2,7 @@ use std::ops::*;
 
 pub type Size = TSize<i32>;
 
+#[derive(Copy, Clone, Debug)]
 pub struct TSize<T> {
     pub width: T,
     pub height: T,
