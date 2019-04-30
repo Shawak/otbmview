@@ -1,6 +1,7 @@
-use std::io::{Error, Read};
+use std::io::{Error, Read, Seek, Cursor};
 use std::mem::*;
 use std::slice::*;
+use std::ptr::null;
 
 pub trait MemType {}
 
@@ -16,8 +17,9 @@ impl MemType for i64 {}
 
 pub trait MemRead {
     fn get<U>(&mut self) -> Result<U, Error>;
-
-    fn gets(&mut self) -> Result<String, Error>;
+    fn get_str(&mut self) -> Result<String, Error>;
+    fn get_str_sized(&mut self, size: usize) -> Result<String, Error>;
+    fn skip(&mut self, count: u64);
 }
 
 impl<T: Read> MemRead for T {
@@ -29,11 +31,19 @@ impl<T: Read> MemRead for T {
         }
     }
 
-    fn gets(&mut self) -> Result<String, Error> {
+    fn get_str(&mut self) -> Result<String, Error> {
         let size = self.get::<u16>()?;
-        let mut buffer: Vec<u8> = Vec::new();
+        self::MemRead::get_str_sized(self, size as _)
+    }
+
+    fn get_str_sized(&mut self, size: usize) -> Result<String, Error> {
+        let mut buffer: Vec<u8> = Vec::with_capacity(size);
         self.take(size as u64)
             .read_to_end(&mut buffer)
             .map(|_| String::from_utf8_lossy(&buffer).into())
+    }
+
+    fn skip(&mut self, count: u64) {
+        std::io::copy(&mut self.take(count), &mut std::io::sink()).expect("could not skip bytes");
     }
 }

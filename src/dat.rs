@@ -197,7 +197,7 @@ impl DatAttributes {
                 category: data.get()?,
                 trade_as: data.get()?,
                 show_as: data.get()?,
-                name: data.gets()?,
+                name: data.get_str()?,
                 restrict_vocation: data.get()?,
                 required_level: data.get()?,
             }),
@@ -385,8 +385,8 @@ impl Thing {
 
     pub fn get_texture(&self, spr: &SpriteData) -> Image {
         let frame = &self.frame_groups[&FrameGroupType::Idle];
-        println!("ID: {}", &self.id);
-        println!("category: {:?}", &self.category);
+        //println!("ID: {}", &self.id);
+        //println!("category: {:?}", &self.category);
 
         let mut texture_layers = 1;
         let mut num_layers = frame.layers;
@@ -395,12 +395,12 @@ impl Thing {
             num_layers = 5;
         }
 
-        println!("{:?}", self.attributes);
+        //println!("{:?}", self.attributes);
 
         let index_size = texture_layers * frame.pattern_width * frame.pattern_height * frame.pattern_depth;
-        println!("frame: {:?}", frame);
+        //println!("frame: {:?}", frame);
         let texture_size = Thing::get_best_texture_dimension(&frame, frame.width as _, frame.height as _, index_size as _);
-        println!("texture_size: {:?}", texture_size);
+        //println!("texture_size: {:?}", texture_size);
 
         let mut full_image: Image = ImageBuffer::new(32 * texture_size.width as u32, 32 * texture_size.height as u32);
 
@@ -410,27 +410,25 @@ impl Thing {
                     for l in 0..frame.layers {
                         let sprite_mask = self.category == ThingCategory::Creature && l > 0;
                         let frame_index = frame.get_texture_index((l %  texture_layers) as _, x as _, y as _, z as _);
-                        println!("{}", frame_index);
+                        //println!("{}", frame_index);
                         let frame_pos = Point::new(
                             (frame_index % (texture_size.width / frame.width as i32) * frame.width as i32) * 32,
                             (frame_index / (texture_size.width / frame.width as i32) * frame.height as i32) * 32);
 
                         for h in 0..frame.height {
                             for w in 0..frame.width {
-                                println!("w, h: {} {}", h, w);
+                                //println!("w, h: {} {}", h, w);
                                 let sprite_index = frame.get_sprite_index(w as _, h as _, if sprite_mask { 1i32 } else { l as i32 }, x as _, y as _, z as _, 0 /* TODO: animationPhase */);
-                                println!("sprite_index: {} {}", sprite_index, frame.sprites[sprite_index as usize]);
+                                //println!("sprite_index: {} {}", sprite_index, frame.sprites[sprite_index as usize]);
                                 let sprite_image_opt = spr.get_image(frame.sprites[sprite_index as usize]);
                                 if let Some(sprite_image_original) = sprite_image_opt {
                                     let mut sprite_image = sprite_image_original.clone();
-
                                     if sprite_mask {
                                         sprite_image.mask(&MASK_COLORS[l as usize - 1]);
                                     }
-                                    println!("blit?");
                                     let sprite_pos = Point::new((frame.width as i32 - w as i32 - 1) * 32, (frame.height as i32 - h as i32 - 1) * 32);
-                                    println!("sprite_pos: {:?}", sprite_pos);
-                                    println!("frame_pos: {:?}", frame_pos);
+                                    //println!("sprite_pos: {:?}", sprite_pos);
+                                    //println!("frame_pos: {:?}", frame_pos);
                                     full_image.blit(frame_pos + sprite_pos, &sprite_image);
                                 }
                             }

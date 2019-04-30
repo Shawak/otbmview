@@ -6,8 +6,6 @@ use std::fs::File;
 //use std::io::prelude::*;
 use std::io::{Error, ErrorKind, Read};
 
-use std;
-
 use num_traits::{FromPrimitive, ToPrimitive};
 
 use mem_read::*;
@@ -223,7 +221,7 @@ impl TownNode {
     }
 }
 
-pub fn read_otbm(filename: String) -> Result<Node, Error> {
+pub fn parse(filename: String) -> Result<Node, Error> {
     let mut file = File::open(filename)?;
     let mut data: Vec<u8> = Vec::new();
     file.read_to_end(&mut data)?;
@@ -237,6 +235,7 @@ pub fn read_otbm(filename: String) -> Result<Node, Error> {
     read_node(data, false)
 }
 
+// https://github.com/Inconcessus/OTBM2JSON/blob/master/otbm2json.js
 fn read_node<T: MemRead>(data: &mut T, is_child: bool) -> Result<Node, Error> {
     let mut node = Node::Unknown;
     let mut children = vec![];
@@ -260,7 +259,6 @@ fn read_node<T: MemRead>(data: &mut T, is_child: bool) -> Result<Node, Error> {
         match c_byte {
             NODE_INIT | NODE_TERM if node == Node::Unknown => {
                 let identifier = data.get::<u8>()?;
-
                 node = match Header::from_u8(identifier).expect("from_u8 failed") {
                     Header::MapHeader => Node::MapHeader(MapHeaderNode::parse(data)?),
                     Header::MapData => Node::MapData(MapDataNode::parse(data)?),
@@ -278,7 +276,7 @@ fn read_node<T: MemRead>(data: &mut T, is_child: bool) -> Result<Node, Error> {
             NODE_ESC => skip = true,
             NODE_INIT => children.push(read_node(data, true)?),
             NODE_TERM => return Ok(node),
-            x => (), /*println!("unused_byte: 0x{:02X}", x)*/
+            x => (), //println!("unused_byte: 0x{:02X}", x)
         }
     }
 }

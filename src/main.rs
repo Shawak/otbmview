@@ -1,4 +1,7 @@
 #![allow(dead_code)]
+#![allow(unused_variables)]
+#![allow(unused_imports)]
+#![allow(unused_assignments)]
 
 #[macro_use]
 extern crate enum_primitive_derive;
@@ -9,6 +12,7 @@ extern crate rayon;
 
 mod dat;
 mod mem_read;
+mod otb;
 mod otbm;
 mod spr;
 mod size;
@@ -27,30 +31,35 @@ fn main() -> Result<(), Error> {
 
 
     // -------------
-
-    print!("Loading otbm..");
+    print!("Loading otb.. ");
     stdout().flush()?;
 
-    let otbm = otbm::read_otbm("map2.otbm".to_string())?;
-    println!(" done");
+    //let otb = otb::parse("items.otb".to_string())?;
+    println!("done");
 
-    print!("Loading spr..");
+    print!("Loading otbm.. ");
+    stdout().flush()?;
+
+    let otbm = otbm::parse("map2.otbm".to_string())?;
+    println!("done");
+
+    print!("Loading spr.. ");
     stdout().flush()?;
 
     let spr = spr::parse("Tibia.spr".to_string())?;
-    println!(" done");
+    println!("done");
 
-    print!("Loading dat..");
+    print!("Loading dat.. ");
     stdout().flush()?;
 
     let dat = dat::parse("Tibia.dat".to_string())?;
-    println!(" done");
+    println!("done");
 
     //let img: ImageBuffer<Rgba<u8>, Vec<u8>> = ImageBuffer::new(32000 * 32, 32000 * 32);
 
-    for (id, thing) in &dat[&ThingCategory::Item] {
+    /*for (id, thing) in &dat[&ThingCategory::Item] {
         thing.get_texture(&spr).save(format!("test/{}.png", id))?;
-    }
+    }*/
 
     //dat[&ThingCategory::Item][&486].get_texture(&spr).save(format!("test/{}.png", 486))?;
 

@@ -1,13 +1,11 @@
-/*#![feature(test)]
+#![feature(test)]
 
 pub mod mem_read;
-pub mod mem_type;
 
 extern crate test;
 
 #[cfg(test)]
 mod tests {
-
     use test;
 
     use std::io::*;
@@ -18,6 +16,36 @@ mod tests {
     use mem_read::*;
 
     #[bench]
+    fn bench_skip_get(b: &mut Bencher) {
+        b.iter(|| -> Result<()> {
+            for n in 1..100000 {
+                let mut buffer = [0u8; 100];
+                buffer[98] = 1u8;
+                let data: &mut &[u8] = &mut buffer.as_ref();
+                data.get::<[u8; 98]>();
+                assert_eq!(data.get::<u8>()?, 1u8);
+            }
+            Ok(())
+        });
+    }
+
+    #[bench]
+    fn bench_skip_skip(b: &mut Bencher) {
+        b.iter(|| -> Result<()> {
+            for n in 1..100000 {
+                let mut buffer = [0u8; 100];
+                buffer[98] = 1u8;
+                let data: &mut &[u8] = &mut buffer.as_ref();
+                data.skip(98);
+                assert_eq!(data.get::<u8>()?, 1u8);
+            }
+            Ok(())
+        });
+    }
+}
+
+
+    /*#[bench]
     fn bench_read_one_by_one_100(b: &mut Bencher) {
         b.iter(|| -> Result<()> {
             for n in 1..100 {
