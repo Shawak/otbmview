@@ -265,6 +265,7 @@ impl HasChildren for Root {
     }
 }*/
 
+#[derive(Debug)]
 pub struct OtbItems {
     sid_map: HashMap<u16, ItemType>,
     cid_map: HashMap<u16, *const ItemType>
@@ -288,13 +289,13 @@ pub fn parse(filename: String) -> Result<OtbItems, Error> {
     file.read_to_end(&mut data)?;
     let data: &mut &[u8] = &mut data.as_ref();
 
-    let preview = &mut data.clone();
+    /*let preview = &mut data.clone();
     for k in 1..10 {
         for n in 0..50 {
             print!("{} ", preview.get::<u8>()?);
         }
         println!();
-    }
+    }*/
 
     let mut signature = data.get::<u32>()?;
     if signature != 0x0 {
@@ -337,7 +338,11 @@ pub fn parse(filename: String) -> Result<OtbItems, Error> {
 
     let sid_map = root_node.children.into_iter().map(|x| (x.server_id, x)).collect::<HashMap<_,_>>();
     let cid_map = (&sid_map).values().map(|v| (v.client_id, v as *const _)).collect::<HashMap<_,_>>();
-    let otb_items = OtbItems { sid_map, cid_map };
+    let mut otb_items = OtbItems { sid_map, cid_map };
+
+    // crystal coin
+    assert_eq!(otb_items.get_sid(2160).client_id, 3043);
+    assert_eq!(otb_items.get_cid(3043).server_id, 2160);
 
     Ok(otb_items)
 }

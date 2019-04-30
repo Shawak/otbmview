@@ -28,13 +28,11 @@ use dat::ThingCategory;
 
 fn main() -> Result<(), Error> {
 
-
-
     // -------------
     print!("Loading otb.. ");
     stdout().flush()?;
 
-    //let otb = otb::parse("items.otb".to_string())?;
+    let otb = otb::parse("items.otb".to_string())?;
     println!("done");
 
     print!("Loading otbm.. ");
