@@ -3,5 +3,8 @@ name = "otbmview"
 version = "0.1.0"
 authors = ["Shawak <maxi.nussbaum@googlemail.com>"]
 
+[workspace]
+members = [ "ot" ]
+
 [dependencies]
 ot = { path = "ot" }

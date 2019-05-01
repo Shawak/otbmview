@@ -1,0 +1,16 @@
+[package]
+name = "ot"
+version = "0.1.0"
+description = "Parses common (open) tibia formats like dat, otb(m), spr. (WIP)"
+homepage = "https://github.com/Shawak/otbmview/ot"
+documentation = "https://docs.rs/ot"
+license = "MIT/Apache-2.0"
+authors = ["Shawak <maxi.nussbaum@googlemail.com>"]
+include = ["Cargo.toml", "**/*.rs"]
+
+[dependencies]
+enum-primitive-derive = "^0.1"
+num-traits = "^0.1"
+rayon = "1.0"
+image = "0.21.1"
+rand = "0.5.4"
