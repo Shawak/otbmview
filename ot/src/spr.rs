@@ -6,7 +6,7 @@ use std::io::{Error, Read};
 
 use mem_read::*;
 
-use image::{ImageBuffer, *};
+use image::{ImageBuffer};
 use rayon::prelude::*;
 
 use draw::*;

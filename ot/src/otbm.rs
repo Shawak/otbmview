@@ -4,7 +4,7 @@
 
 use std::fs::File;
 //use std::io::prelude::*;
-use std::io::{Error, ErrorKind, Read};
+use std::io::{Error, Read};
 
 use num_traits::{FromPrimitive, ToPrimitive};
 
@@ -276,7 +276,7 @@ fn read_node<T: MemRead>(data: &mut T, is_child: bool) -> Result<Node, Error> {
             NODE_ESC => skip = true,
             NODE_INIT => children.push(read_node(data, true)?),
             NODE_TERM => return Ok(node),
-            x => (), //println!("unused_byte: 0x{:02X}", x)
+            _ => (), //println!("unused_byte: 0x{:02X}", x)
         }
     }
 }

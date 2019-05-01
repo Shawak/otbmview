@@ -3,7 +3,7 @@
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{Error, Read};
-use image::{ImageBuffer, *};
+use image::{ImageBuffer};
 
 use mem_read::*;
 
@@ -349,7 +349,7 @@ impl FrameGroup {
             * self.pattern_width as i32 + x)
             * self.layers as i32 + l)
             * self.height as i32 + h)
-            * self.width as i32;
+            * self.width as i32 + w;
         assert!((index as usize) < self.sprites.len());
         index
     }
@@ -541,7 +541,7 @@ pub fn parse_items<T: MemRead>(
                 1
             };
             //println!("group_count: {}", group_count);
-            for i in 0..group_count {
+            for _ in 0..group_count {
                 let group_type = if category == ThingCategory::Creature {
                     FrameGroupType::from_u8(data.get()?).expect("unknown frame group")
                 } else {

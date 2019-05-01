@@ -91,3 +91,6 @@ Cargo.lock
 *.otbm
 *.spr
 *.dat
+*.otb
+
+ot

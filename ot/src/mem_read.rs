@@ -1,7 +1,6 @@
-use std::io::{Error, Read, Seek, Cursor};
+use std::io::{Error, Read};
 use std::mem::*;
 use std::slice::*;
-use std::ptr::null;
 
 pub trait MemType {}
 

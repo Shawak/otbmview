@@ -1,55 +1,31 @@
-#![allow(dead_code)]
+/*#![allow(dead_code)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-#![allow(unused_assignments)]
+#![allow(unused_assignments)]*/
 
 #[macro_use]
-extern crate enum_primitive_derive;
-extern crate image;
-extern crate num_traits;
-extern crate rand;
-extern crate rayon;
+extern crate ot;
 
-mod dat;
-mod mem_read;
-mod otb;
-mod otbm;
-mod spr;
-mod size;
-mod point;
-mod draw;
+use ot::*;
 
-use std::io::{stdout, Error, Write};
-
-use image::{GenericImage, ImageBuffer, Rgba};
-
-use draw::*;
-use dat::ThingCategory;
+use std::io::{Error, Write};
 
 fn main() -> Result<(), Error> {
 
     // -------------
-    print!("Loading otb.. ");
-    stdout().flush()?;
-
+    write!("Loading otb..");
     let otb = otb::parse("items.otb".to_string())?;
     println!("done");
 
-    print!("Loading otbm.. ");
-    stdout().flush()?;
-
+    write!("Loading otbm.. ");
     let otbm = otbm::parse("map2.otbm".to_string())?;
     println!("done");
 
-    print!("Loading spr.. ");
-    stdout().flush()?;
-
+    write!("Loading spr.. ");
     let spr = spr::parse("Tibia.spr".to_string())?;
     println!("done");
 
-    print!("Loading dat.. ");
-    stdout().flush()?;
-
+    write!("Loading dat.. ");
     let dat = dat::parse("Tibia.dat".to_string())?;
     println!("done");
 

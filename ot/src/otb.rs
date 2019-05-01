@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 use std::fs::File;
-use std::io::{Error, ErrorKind, Read};
+use std::io::{Error, Read};
 use std::collections::HashMap;
 
 use num_traits::{FromPrimitive, ToPrimitive};
@@ -142,7 +142,7 @@ impl ItemType {
         loop {
             let attr = match data.get::<u8>() {
                 Ok(attr) => attr,
-                Err(e) => 0x0
+                Err(_) => 0x0
             };
 
             if attr == 0x0 || attr == 0xFF {

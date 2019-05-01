@@ -1,7 +1,7 @@
-use image::{GenericImage, ImageBuffer, Rgba, RgbaImage};
+use image::{Rgba};
 use point::Point;
 
-pub type Image = RgbaImage;
+pub type Image = image::RgbaImage;
 
 pub trait Drawable {
     fn draw(&mut self, x: u32, y: u32, other: &mut Image);

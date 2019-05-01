@@ -1,4 +1,34 @@
-#![feature(test)]
+#[macro_use]
+extern crate enum_primitive_derive;
+extern crate num_traits;
+
+extern crate image;
+extern crate rand;
+extern crate rayon;
+
+pub mod dat;
+pub mod draw;
+pub mod mem_read;
+pub mod otb;
+pub mod otbm;
+pub mod point;
+pub mod size;
+pub mod spr;
+
+#[macro_export]
+macro_rules! flush {
+    () => (std::io::stdout().flush().ok().expect("could not flush stdout"));
+}
+
+#[macro_export]
+macro_rules! write {
+    ($e:expr) => {
+        print!("{}", $e);
+        flush!();
+    }
+}
+
+/*#![feature(test)]
 
 pub mod mem_read;
 
@@ -42,8 +72,7 @@ mod tests {
             Ok(())
         });
     }
-}
-
+}*/
 
     /*#[bench]
     fn bench_read_one_by_one_100(b: &mut Bencher) {
