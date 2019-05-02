@@ -4,11 +4,13 @@ use std::fs::File;
 use std::io::{Error, Read};
 use std::collections::HashMap;
 
-use num_traits::{FromPrimitive, ToPrimitive};
+use num_traits::{FromPrimitive, ToPrimitive, signum};
 
 use mem_read::*;
 use image::Primitive;
 use dat::ThingCategory;
+use std::fmt::Binary;
+use std::process::Output;
 
 const NODE_ESCAPE: u8 = 0xFD;
 const NODE_START: u8 = 0xFE;
@@ -123,7 +125,7 @@ fn read_node<T: MemRead>(data: &mut T, is_child: bool) -> Result<Node, Error> {
     }
 }*/
 
-#[derive(Debug)]
+/*#[derive(Debug)]
 struct ItemType {
     category: u8,
     server_id: u16,
@@ -173,9 +175,306 @@ impl ItemType {
             }
         }
     }
+}*/
+
+trait HasChildren {
+    type Output;
+    type Child;
+
+    fn parse<T: MemRead>(data: &mut T, children: Vec<Self::Child>) -> Result<Self::Output, Error>;
+    fn parse_child<T: MemRead>(data: &mut T) -> Result<Self::Child, Error>;
 }
 
-#[derive(Debug)]
+pub struct Main {
+    signature: u32,
+    children: Vec<MainChild>
+    // parse_child
+}
+
+enum MainChild {
+    Root(Root),
+}
+
+struct Root {
+    otb_major_version: u32,
+    otb_minor_version: u32,
+    children: Vec<ItemCategory>
+    // parse_child
+}
+
+enum ItemCategory {
+    Invalid (ItemType),
+    Ground(ItemType),
+    Container(ItemType),
+    Weapon(ItemType),
+    Ammunition(ItemType),
+    Armor(ItemType),
+    Charges(ItemType),
+    Teleport(ItemType),
+    MagicField(ItemType),
+    Writable(ItemType),
+    Key(ItemType),
+    Splash(ItemType),
+    Fluid(ItemType),
+    Door(ItemType),
+    Deprecated(ItemType)
+}
+
+pub struct ItemType {
+    server_id: u16,
+    client_id: u16,
+    name: String
+}
+
+impl HasChildren for Main {
+    type Output = Main;
+    type Child = MainChild;
+
+    fn parse<T: MemRead>(data: &mut T, children: Vec<Self::Child>) -> Result<Self, Error> {
+        println!("parse main");
+
+        let signature = data.get::<u32>()?;
+        if signature != 0x0 {
+            panic!("main signature wasn't 0x0")
+        }
+
+        Ok(Main { signature, children })
+    }
+
+    fn parse_child<T: MemRead>(data: &mut T) -> Result<Self::Child, Error> {
+        println!("parse main child");
+        let identifier = data.get::<u8>()?;
+        println!("{}", identifier);
+        match identifier {
+            0x00 => Ok(MainChild::Root(Root::read_node(data)?)),
+            _ => panic!("unknown type info")
+        }
+    }
+}
+
+impl HasChildren for Root {
+    type Output = Root;
+    type Child = ItemCategory;
+
+    fn parse<T: MemRead>(data: &mut T, children: Vec<Self::Child>) -> Result<Self, Error> {
+        println!("parse root");
+
+        let signature = data.get::<u32>()?;
+        if signature != 0x0 {
+            panic!("root signature wasn't 0x0");
+        }
+
+        let root_attr = data.get::<u8>()?;
+        if root_attr != 0x01 {
+            panic!("invalid root attr");
+        }
+
+        let size = data.get::<u16>()?;
+        if size != 4 + 4 + 4 + 128 {
+            panic!("invalid root attr version size");
+        }
+
+        let otb_major_version = data.get::<u32>()?;
+        let otb_minor_version = data.get::<u32>()?;
+        data.get::<u32>()?; // build number
+        //data.get::<[u8; 128]>()?; // description
+        data.get::<u64>()?;
+        data.get::<u64>()?;
+
+        Ok(Root { otb_major_version, otb_minor_version, children })
+    }
+
+    fn parse_child<T: MemRead>(data: &mut T) -> Result<Self::Child, Error> {
+        println!("parse root children");
+
+        let item_category = data.get::<u8>()?;
+        println!("item_category: {}", item_category);
+        Ok(match item_category {
+            1 => ItemCategory::Ground(ItemType::new(data)?),
+            2 => ItemCategory::Container(ItemType::new(data)?),
+            3 => ItemCategory::Weapon(ItemType::new(data)?),
+            4 => ItemCategory::Ammunition(ItemType::new(data)?),
+            5 => ItemCategory::Armor(ItemType::new(data)?),
+            6 => ItemCategory::Charges(ItemType::new(data)?),
+            7 => ItemCategory::Teleport(ItemType::new(data)?),
+            8 => ItemCategory::MagicField(ItemType::new(data)?),
+            9 => ItemCategory::Writable(ItemType::new(data)?),
+            10 => ItemCategory::Key(ItemType::new(data)?),
+            11 => ItemCategory::Splash(ItemType::new(data)?),
+            12 => ItemCategory::Fluid(ItemType::new(data)?),
+            13 => ItemCategory::Door(ItemType::new(data)?),
+            14 => ItemCategory::Deprecated(ItemType::new(data)?),
+            _ => panic!("unknown item category")
+        })
+    }
+}
+
+impl ItemType {
+    fn new<T: MemRead>(data: &mut T) -> Result<ItemType, Error> {
+        let mut item_type = ItemType { server_id: 0, client_id: 0, name: "".to_string() };
+        data.get::<u32>()?; // skip flags
+        static mut LAST_ID: u16 = 99;
+        loop {
+            let attr = match data.get::<u8>() {
+                Ok(attr) => attr,
+                Err(_) => 0x0
+            };
+
+            if attr == 0x0 || attr == 0xFF {
+                return Ok(item_type)
+            }
+
+            let len = data.get::<u16>()?;
+            //println!("attr: {} len: {}", attr, len);
+            match attr {
+                16 /* ItemTypeAttrServerId */ => {
+                    let mut server_id = data.get::<u16>()?;
+                    unsafe {
+                        if server_id > 30000 && server_id < 30100 {
+                            server_id -= 30000;
+                        } else if LAST_ID > 99 && LAST_ID != server_id - 1 {
+                            while LAST_ID != server_id -1 {
+                                // TODO: add item types https://github.com/edubart/otclient/blob/1addf3e1766ca3fe43bdf1114c0655a971123291/src/client/itemtype.cpp#L69
+                                LAST_ID += 1;
+                            }
+                        }
+                        LAST_ID = server_id;
+                    }
+                    item_type.server_id = server_id;
+                }
+                17 /*ItemTypeAttrClientId*/ => item_type.client_id = data.get::<u16>()?,
+                18 /*ItemTypeAttrName DEPRECATED?*/ => data.skip(len as _), //item_type.name = data.get_str(len as _)?,
+                _ => data.skip(len as _) // skip irrelevant attributes
+            }
+        }
+    }
+}
+
+trait BinaryTree {
+    type Output;
+    type Child;
+
+    //fn read_child<T: MemRead>(data: &mut T) -> Result<Self::Child, Error>;
+    //fn read_node<T: MemRead>(data: &mut T) -> Result<Self::Output, Error>;
+    fn read_node<T: MemRead>(data: &mut T) -> Result<Self::Output, Error>;
+}
+
+impl <D: HasChildren> BinaryTree for D {
+    type Output = D::Output;
+    type Child = D::Child;
+
+    /*fn read_child<T: MemRead>(data: &mut T) -> Result<Self::Child, Error> {
+        let mut buffer: Vec<u8> = Vec::new();
+        let mut children: Vec<Self::Child> = Vec::new();
+        loop {
+            let byte = data.get::<u8>()?;
+            match byte {
+                NODE_START => children.push(D::parse_child(data)?),
+                NODE_END => return Ok(Self::parse_child(&mut buffer.as_ref() as &mut &[u8])?),
+                NODE_ESCAPE => buffer.push(data.get::<u8>()?),
+                _ => buffer.push(byte)
+            }
+        }
+    }
+
+    fn read_node<T: MemRead>(data: &mut T) -> Result<Self::Output, Error> {
+        let mut buffer: Vec<u8> = Vec::new();
+        let mut children: Vec<Self::Child> = Vec::new();
+        loop {
+            let byte = data.get::<u8>()?;
+            match byte {
+                NODE_START => children.push(Self::read_child(data)?),//children.push(D::parse_child(data)?),
+                NODE_END => return Ok(Self::parse(&mut buffer.as_ref() as &mut &[u8], children)?),
+                NODE_ESCAPE => buffer.push(data.get::<u8>()?),
+                _ => buffer.push(byte)
+            }
+        }
+    }*/
+
+    fn read_node<T: MemRead>(data: &mut T) -> Result<Self::Output, Error> {
+        println!("read_node");
+
+        let mut buffer: Vec<u8> = Vec::new();
+        let mut children: Vec<Self::Child> = Vec::new();
+        let mut child = false;
+
+        loop {
+            let byte = match data.get::<u8>() {
+                Ok(b) => b,
+                Err(_) => break
+            };
+
+            match byte {
+                NODE_START => {
+                    child = true;
+                    children.push({
+
+                        let mut child_buffer: Vec<u8> = Vec::new();
+                        let mut is_child = false;
+                        loop {
+                            let s = match data.get::<u8>() {
+                                Ok(s) => s,
+                                Err(_) => break ()
+                            };
+
+                            match s {
+                                NODE_START => is_child = true,
+                                NODE_END => is_child = break,
+                                NODE_ESCAPE => {
+                                    if !is_child {
+                                        child_buffer.push(data.get::<u8>()?)
+                                    }
+                                },
+                                _ => child_buffer.push(s)
+                            }
+                        }
+
+                        Self::parse_child(&mut child_buffer.as_ref() as &mut &[u8])?
+
+                    })
+                },
+                NODE_END => break,
+                NODE_ESCAPE => {
+                    if !child  {
+                        buffer.push(data.get::<u8>()?)
+                    }
+                },
+                _ => buffer.push(byte)
+            }
+        }
+
+        Ok(Self::parse(&mut buffer.as_ref() as &mut &[u8], children)?)
+    }
+}
+
+pub fn parse(filename: String) -> Result<Main, Error> {
+    let mut file = File::open(filename)?;
+    let mut data: Vec<u8> = Vec::new();
+    file.read_to_end(&mut data)?;
+    let data: &mut &[u8] = &mut data.as_ref();
+
+    //let c = std::io::Cursor::new(data);
+
+    let preview = &mut data.clone();
+    for k in 1..10 {
+        for n in 0..50 {
+            print!("{} ", preview.get::<u8>()?);
+        }
+        println!();
+    }
+
+    Ok(Main::read_node(data)?)
+}
+
+/*trait TreeNode {
+
+}
+
+struct Roots {
+    children: Vec<Box<dyn TreeNode>>
+}*/
+
+/*#[derive(Debug)]
 struct Root {
     version: u8,
     children: Vec<ItemType>
@@ -233,7 +532,6 @@ impl HasChildren for Root {
                         //println!("end");
                         let child = self.parse_child(dat)?;
                         children.push(child);
-                        //println!("end2");
                         parsing_child = false;
                         buffer.clear();
                     } else {
@@ -247,7 +545,7 @@ impl HasChildren for Root {
                 _ => {
                     //println!("push");
                     buffer.push(byte)
-                }// panic!("unused_byte: 0x{:02X}, aborting!")
+                }
             }
         }
     }
@@ -345,4 +643,4 @@ pub fn parse(filename: String) -> Result<OtbItems, Error> {
     assert_eq!(otb_items.get_cid(3043).server_id, 2160);
 
     Ok(otb_items)
-}
+}*/
