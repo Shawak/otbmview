@@ -203,7 +203,7 @@ struct Root {
 }
 
 enum ItemCategory {
-    Invalid (ItemType),
+    Invalid(ItemType),
     Ground(ItemType),
     Container(ItemType),
     Weapon(ItemType),
@@ -244,7 +244,6 @@ impl HasChildren for Main {
     fn parse_child<T: MemRead>(data: &mut T) -> Result<Self::Child, Error> {
         println!("parse main child");
         let identifier = data.get::<u8>()?;
-        println!("{}", identifier);
         match identifier {
             0x00 => Ok(MainChild::Root(Root::read_node(data)?)),
             _ => panic!("unknown type info")
@@ -304,13 +303,15 @@ impl HasChildren for Root {
             12 => ItemCategory::Fluid(ItemType::new(data)?),
             13 => ItemCategory::Door(ItemType::new(data)?),
             14 => ItemCategory::Deprecated(ItemType::new(data)?),
-            _ => panic!("unknown item category")
+            _ => panic!("unknown item category {}", item_category)
         })
     }
 }
 
 impl ItemType {
     fn new<T: MemRead>(data: &mut T) -> Result<ItemType, Error> {
+        println!("parse item type");
+
         let mut item_type = ItemType { server_id: 0, client_id: 0, name: "".to_string() };
         data.get::<u32>()?; // skip flags
         static mut LAST_ID: u16 = 99;
@@ -410,7 +411,8 @@ impl <D: HasChildren> BinaryTree for D {
                     children.push({
 
                         let mut child_buffer: Vec<u8> = Vec::new();
-                        let mut is_child = false;
+                        let mut depth = 0;
+
                         loop {
                             let s = match data.get::<u8>() {
                                 Ok(s) => s,
@@ -418,25 +420,50 @@ impl <D: HasChildren> BinaryTree for D {
                             };
 
                             match s {
-                                NODE_START => is_child = true,
-                                NODE_END => is_child = break,
+                                NODE_START =>{
+                                    depth+=1;
+                                    child_buffer.push(s);
+                                },
+                                NODE_END => {
+                                    if depth == 0 {
+                                        break;
+                                    } else {
+                                        child_buffer.push(s);
+                                    }
+                                },
                                 NODE_ESCAPE => {
-                                    if !is_child {
+                                    if depth == 0 {
+                                        child_buffer.push(data.get::<u8>()?)
+                                    } else {
+                                        child_buffer.push(s);
                                         child_buffer.push(data.get::<u8>()?)
                                     }
                                 },
-                                _ => child_buffer.push(s)
+                                _ => {
+                                    child_buffer.push(s)
+                                }
                             }
                         }
 
+                        println!("depth: {}", depth);
+                        println!("child_buffer: {:?}", &child_buffer[0..std::cmp::min(100, child_buffer.len())]);
                         Self::parse_child(&mut child_buffer.as_ref() as &mut &[u8])?
 
                     })
                 },
-                NODE_END => break,
+                NODE_END => {
+                    child = false;
+                    if !child {
+                        break;
+                    }
+                },
                 NODE_ESCAPE => {
                     if !child  {
                         buffer.push(data.get::<u8>()?)
+                    } else {
+                        //data.get::<u8>()?;
+                        buffer.push(byte);
+                        buffer.push(data.get::<u8>()?);
                     }
                 },
                 _ => buffer.push(byte)
