@@ -46,18 +46,19 @@ impl <D: HasChildren> BinaryTree for D {
                         loop {
                             let s = match data.get::<u8>() {
                                 Ok(s) => s,
-                                Err(_) => break ()
+                                Err(_) => break
                             };
 
                             match s {
                                 NODE_START =>{
-                                    depth+=1;
+                                    depth += 1;
                                     child_buffer.push(s);
                                 },
                                 NODE_END => {
                                     if depth == 0 {
                                         break;
                                     } else {
+                                        depth -= 1;
                                         child_buffer.push(s);
                                     }
                                 },
