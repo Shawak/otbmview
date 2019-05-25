@@ -1,6 +1,6 @@
 [package]
 name = "ot"
-version = "0.1.0"
+version = "0.2.0"
 description = "Parses common (open) tibia formats like dat, otb(m), spr. (WIP)"
 homepage = "https://github.com/Shawak/otbmview/ot"
 documentation = "https://docs.rs/ot"
